@@ -1,0 +1,33 @@
+[functions]
+0x8284DAE0 = { name = "sub_8284DAE0" }
+0x82201CA8 = { name = "sub_82201CA8" }
+0x8221DCF8 = { name = "sub_8221DCF8" }
+0x821B4F58 = { name = "sub_821B4F58" }
+0x82850480 = { name = "sub_82850480" }
+0x82841630 = { name = "sub_82841630" }
+0x82846138 = { name = "sub_82846138" }
+0x822416D8 = { name = "sub_822416D8" }
+0x82278D48 = { name = "sub_82278D48" }
+0x8221A958 = { name = "sub_8221A958" }
+0x821B5D08 = { name = "sub_821B5D08" }
+0x822214B0 = { name = "sub_822214B0" }
+0x821B4F70 = { name = "sub_821B4F70" }
+0x82265D90 = { name = "sub_82265D90" }
+0x8221A938 = { name = "sub_8221A938" }
+0x821F8480 = { name = "sub_821F8480" }
+0x821836A0 = { name = "sub_821836A0" }
+0x821F4EF8 = { name = "sub_821F4EF8" }
+0x821F84A8 = { name = "sub_821F84A8" }
+0x821C6440 = { name = "sub_821C6440" }
+0x821B4F98 = { name = "sub_821B4F98" }
+0x821A09C0 = { name = "sub_821A09C0" }
+0x826006E8 = { name = "sub_826006E8" }
+0x821DAC90 = { name = "sub_821DAC90" }
+0x821F4EB8 = { name = "sub_821F4EB8" }
+0x824DA938 = { name = "sub_824DA938" }
+0x821235C8 = { name = "sub_821235C8" }
+0x82183CF0 = { name = "sub_82183CF0" }
+
+#Native
+0x8266AB08 = { name = "InitRenderer" }
+0x82438978 = { name = "BodyAllocator" }

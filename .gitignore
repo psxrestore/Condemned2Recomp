@@ -1,0 +1,4 @@
+# Ignore files that might be game asssets
+assets/
+*.xex
+*.iso
