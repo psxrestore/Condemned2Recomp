@@ -1,5 +1,8 @@
-> [!CAUTION]
+> [!IMPORTANT]
 > This repository does not include, distribute, or provide access to any game assets, executables, or copyrighted content. It only contains the source code to build the recompilation. **You must own a legitimate copy of Condemned 2: Bloodshot** and extract the required assets from it.
+
+> [!CAUTION]
+> This project is a work-in-progress, and while it is in playable state, you might experience bugs and crashes!
 
 # Condemned2Recomp
 This is a static recompilation of **Condemned 2: Bloodshot (Xbox 360)** for Native PC built through RexGlue-SDK. 
@@ -7,11 +10,12 @@ This is a static recompilation of **Condemned 2: Bloodshot (Xbox 360)** for Nati
 ## Installation
 * Using [extract-xiso](https://github.com/XboxDev/extract-xiso) or [xdvdfs](https://github.com/antangelo/xdvdfs), extract all game files from your legally owned copy of **Condemned 2: Bloodshot**. 
 * Place extracted game files into the *"Assets"* folder.
+* **(Optional)** Configure your graphic settings by modifying *"condemned2recomp.toml"*.
 * Run *"condemned2recomp.exe"* to start **Condemned 2: Bloodshot**.
 
 ## Controls
 
-Keyboard & mouse support is still work-in-progress! Best played with a gamepad.
+Keyboard & mouse support is still work-in-progress! Currently, it is recommended to use a gamepad to play.
 
 | Action | Key |
 | --- | --- |
