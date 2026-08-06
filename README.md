@@ -8,11 +8,17 @@
 This is a static recompilation of **Condemned 2: Bloodshot (Xbox 360)** for Native PC built through RexGlue-SDK. 
 
 ## Installation
-* Using [extract-xiso](https://github.com/XboxDev/extract-xiso) or [xdvdfs](https://github.com/antangelo/xdvdfs), extract all game files from your legally owned copy of **Condemned 2: Bloodshot**. 
+* Run *"condemned2recomp.exe"*. On first launch it asks for the disc image (*.iso*) dumped from your legally owned copy of **Condemned 2: Bloodshot** and extracts the game files into the *"Assets"* folder for you (~7 GiB of free space needed).
+* **(Optional)** Configure your graphic settings by modifying *"condemned2recomp.toml"*.
+
+<details>
+<summary>Manual installation (alternative)</summary>
+
+* Using [extract-xiso](https://github.com/XboxDev/extract-xiso) or [xdvdfs](https://github.com/antangelo/xdvdfs), extract all game files from your legally owned copy of **Condemned 2: Bloodshot**.
 * In the same folder as *"condemned2recomp.exe"*, create a new folder named *"Assets"*.
 * Place extracted game files into the *"Assets"* folder.
-* **(Optional)** Configure your graphic settings by modifying *"condemned2recomp.toml"*.
-* Run *"condemned2recomp.exe"* to start **Condemned 2: Bloodshot**.
+* For an unattended/headless install, set the environment variable `CONDEMNED2_INSTALL_ISO` to the path of your disc image before launching.
+</details>
 
 ## Controls
 
