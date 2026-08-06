@@ -12,6 +12,7 @@
 #include <rex/rex_app.h>
 
 #include "condemned2recomp_iso_installer.h"
+#include "ui/wizard_screen.h"
 
 class Condemned2recompApp : public rex::ReXApp {
  public:
@@ -25,6 +26,12 @@ class Condemned2recompApp : public rex::ReXApp {
 
   void OnPreSetup(rex::RuntimeConfig& config) override {
       config.gpu_plugin = "xenos";
+  }
+
+  void OnConfigureFonts(ImFontAtlas* atlas) override {
+      // Scalable fonts for the first-run installer wizard; the SDK default is
+      // a 10 px bitmap font that upscales poorly to heading sizes.
+      rex::ui::ConfigureWizardFonts(atlas);
   }
 
   void OnConfigurePaths(rex::PathConfig& paths) override {

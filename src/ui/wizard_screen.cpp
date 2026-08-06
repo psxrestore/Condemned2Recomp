@@ -13,6 +13,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
+#include <filesystem>
+#include <string>
 #include <utility>
 
 #include <rex/ui/imgui_drawer.h>
@@ -256,6 +259,11 @@ std::vector<std::pair<const char*, const char*>> WrapLines(ImFont* font, float s
   return lines;
 }
 
+// Scalable system fonts registered by ConfigureWizardFonts(); null when none
+// was found, in which case the drawer's default font is used.
+ImFont* g_wizard_font = nullptr;
+ImFont* g_wizard_font_bold = nullptr;
+
 std::string FormatBytes(uint64_t bytes) {
   char buf[32];
   if (bytes >= 1000000000ull) {
@@ -273,8 +281,8 @@ std::string FormatBytes(uint64_t bytes) {
 int DrawWizardScreen(ImGuiDrawer* drawer, ImGuiIO& io, const WizardScreenSpec& spec,
                      int& focus_index, float& highlight_anim_y) {
   (void)drawer;
-  ImFont* font = ImGui::GetFont();
-  ImFont* bold = font;
+  ImFont* font = g_wizard_font ? g_wizard_font : ImGui::GetFont();
+  ImFont* bold = g_wizard_font_bold ? g_wizard_font_bold : font;
   ImFont* bold_ol = bold;
 
   const ImVec2 display = io.DisplaySize;
@@ -589,6 +597,47 @@ int DrawWizardScreen(ImGuiDrawer* drawer, ImGuiIO& io, const WizardScreenSpec& s
   ImGui::End();
   ImGui::PopStyleVar(2);
   return activated;
+}
+
+void ConfigureWizardFonts(ImFontAtlas* atlas) {
+  struct Candidate {
+    const char* regular;
+    const char* bold;
+  };
+#if defined(_WIN32)
+  std::string fonts_dir = "C:\\Windows\\Fonts\\";
+  if (const char* windir = std::getenv("WINDIR"); windir != nullptr && *windir != '\0') {
+    fonts_dir = std::string(windir) + "\\Fonts\\";
+  }
+  const std::string regular_candidates[] = {fonts_dir + "segoeui.ttf"};
+  const std::string bold_candidates[] = {fonts_dir + "seguisb.ttf", fonts_dir + "segoeuib.ttf"};
+#else
+  const std::string regular_candidates[] = {
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+      "/usr/share/fonts/TTF/DejaVuSans.ttf",
+      "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+      "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+  };
+  const std::string bold_candidates[] = {
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+      "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+      "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
+      "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+  };
+#endif
+  auto add_first_existing = [atlas](const auto& candidates) -> ImFont* {
+    for (const std::string& path : candidates) {
+      std::error_code ec;
+      if (std::filesystem::is_regular_file(path, ec) && !ec) {
+        if (ImFont* font = atlas->AddFontFromFileTTF(path.c_str(), 16.0f)) {
+          return font;
+        }
+      }
+    }
+    return nullptr;
+  };
+  g_wizard_font = add_first_existing(regular_candidates);
+  g_wizard_font_bold = add_first_existing(bold_candidates);
 }
 
 }  // namespace rex::ui

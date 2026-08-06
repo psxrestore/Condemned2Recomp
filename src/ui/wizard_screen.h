@@ -57,4 +57,10 @@ struct WizardScreenSpec {
 int DrawWizardScreen(ImGuiDrawer* drawer, ImGuiIO& io, const WizardScreenSpec& spec,
                      int& focus_index, float& highlight_anim_y);
 
+// Loads scalable system UI fonts for the wizard into the atlas (the stock SDK
+// only registers a 10 px bitmap font, which upscales poorly to the wizard's
+// heading sizes). Call from ReXApp::OnConfigureFonts(); a no-op leaving the
+// default font in use when no known system font is found.
+void ConfigureWizardFonts(ImFontAtlas* atlas);
+
 }  // namespace rex::ui

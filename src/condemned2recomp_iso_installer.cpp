@@ -399,7 +399,7 @@ void ShowIsoInstallWizard(rex::ui::ImGuiDrawer* drawer, rex::PathConfig runtime_
   options.intro =
       "This port needs the game files from your own legally-owned Xbox 360 copy "
       "of Condemned 2: Bloodshot. Select your disc image (.iso) and its contents "
-      "will be extracted here — nothing else to do.";
+      "will be extracted here. Nothing else to do.";
   options.target_directory = game_root.string();
   options.initial_status =
       "Select the disc image dumped from your copy of the game. Extraction "
