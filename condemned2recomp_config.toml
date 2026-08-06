@@ -27,6 +27,7 @@
 0x824DA938 = { name = "sub_824DA938" }
 0x821235C8 = { name = "sub_821235C8" }
 0x82183CF0 = { name = "sub_82183CF0" }
+0x82694ED0 = { name = "sub_82694ED0" }
 
 #Native
 0x8266AB08 = { name = "InitRenderer" }
