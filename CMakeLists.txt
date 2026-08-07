@@ -13,6 +13,9 @@ include(generated/rexglue.cmake)
 # Sources
 set(CONDEMNED2RECOMP_SOURCES
     src/main.cpp
+    src/condemned2recomp_iso_installer.cpp
+    src/ui/acquire_wizard_dialog.cpp
+    src/ui/wizard_screen.cpp
 )
 
 if(WIN32)
