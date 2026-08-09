@@ -9,5 +9,5 @@ game_root = "assets"
 file_path = "assets/default.xex"
 out_directory_path = "generated/default"
 includes = [
-	"condemned2recomp_config.toml",
+	"condemned2recomp_config_tu.toml", # condemned2recomp_config.toml only supports the pre-patch version!
 ]

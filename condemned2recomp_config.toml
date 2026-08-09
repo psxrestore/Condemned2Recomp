@@ -1,3 +1,4 @@
+# Condemned 2: Bloodshot Functions (Pre-Patch)
 [functions]
 0x8284DAE0 = { name = "sub_8284DAE0" }
 0x82201CA8 = { name = "sub_82201CA8" }
