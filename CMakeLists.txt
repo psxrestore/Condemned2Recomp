@@ -13,6 +13,8 @@ include(generated/rexglue.cmake)
 # Sources
 set(CONDEMNED2RECOMP_SOURCES
     src/main.cpp
+    src/condemned2_hooks.cpp
+    src/condemned2_settings.cpp
 )
 
 if(WIN32)

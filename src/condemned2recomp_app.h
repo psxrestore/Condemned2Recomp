@@ -5,38 +5,41 @@
 #pragma once
 
 #include <rex/rex_app.h>
+#include <rex/cvar.h>
+#include <rex/ui/keybinds.h>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <format>
+#include <condemned2_hooks.h>
+#include <condemned2_settings.h>
 
-class Condemned2recompApp : public rex::ReXApp {
- public:
-  using rex::ReXApp::ReXApp;
+namespace Condemned2 {
 
-  static std::unique_ptr<rex::ui::WindowedApp> Create(
-      rex::ui::WindowedAppContext& ctx) {
-    return std::unique_ptr<Condemned2recompApp>(new Condemned2recompApp(ctx, "condemned2recomp",
-        PPCImageConfig));
-  }
+    class Condemned2recompApp : public rex::ReXApp {
+        public:
+            using rex::ReXApp::ReXApp;
 
-  void OnPreSetup(rex::RuntimeConfig& config) override {
-      config.gpu_plugin = "xenos";
-  }
+            static std::unique_ptr<rex::ui::WindowedApp> Create(
+                rex::ui::WindowedAppContext& ctx) {
+                return std::unique_ptr<Condemned2recompApp>(new Condemned2recompApp(ctx, "condemned2recomp", PPCImageConfig));
+            }
 
-  void OnConfigurePaths(rex::PathConfig& paths) override {
-      if (paths.game_data_root.empty()) { // Use default assets directory path if one isn't provided!
-          const auto assets_dir = paths.config_path.parent_path() / "Assets";
-          if (std::filesystem::is_regular_file(assets_dir / "default.xex")) {
-              paths.game_data_root = assets_dir;
-          }
-      }
-  }
+            void OnPreSetup(rex::RuntimeConfig& config) override {
+                config.gpu_plugin = "xenos";
+                InitializeHookCallbacks();
+            }
 
-  // Override virtual hooks for customization:
-  // void OnPostInitLogging() override {}
-  // void OnLoadXexImage(std::string& xex_image) override {}
-  // void OnPostLoadXexImage() override {}
-  // void OnPostSetup() override {}
-  // void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override {}
-  // std::unique_ptr<rex::ui::ImGuiDialog> CreateAchievementsOverlay() override;
-  // std::unique_ptr<rex::ui::AchievementNotificationDialog>
-  // CreateAchievementNotificationDialog() override;
-  // void OnShutdown() override {}
-};
+            void OnConfigurePaths(rex::PathConfig& paths) override {
+                SetDefaultPaths(paths);
+            }
+
+            std::optional<rex::PathConfig> OnFinalizePaths(const rex::PathConfig& defaults, std::function<void(rex::PathConfig)> resume) override {
+                rex::ui::Window *curWindow = window();
+                InitializeDefaultSettings(curWindow);
+                (void)resume;
+                return defaults;
+            }
+    };
+
+}

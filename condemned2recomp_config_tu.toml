@@ -31,3 +31,7 @@
 0x824DA6B8 = {}
 0x82123768 = {}
 0x8220BAF0 = {}
+
+#Internal
+0x826A7E90 = {name="SetSettingValue"}
+0x824384F0 = {name="BodyCapFunction"}
