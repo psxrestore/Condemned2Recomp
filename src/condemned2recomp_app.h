@@ -13,6 +13,9 @@
 #include <format>
 #include <condemned2_hooks.h>
 #include <condemned2_settings.h>
+#if REX_PLATFORM_WIN32
+  #include <timeapi.h>
+#endif  // REX_PLATFORM_WIN32
 
 namespace Condemned2 {
 
@@ -27,6 +30,10 @@ namespace Condemned2 {
 
             void OnPreSetup(rex::RuntimeConfig& config) override {
                 config.gpu_plugin = "xenos";
+                //Force high resolution timer for Windows
+                #if REX_PLATFORM_WIN32
+                    timeBeginPeriod(1);
+                #endif  // REX_PLATFORM_WIN32
             }
 
             void OnConfigurePaths(rex::PathConfig& paths) override {
@@ -35,6 +42,13 @@ namespace Condemned2 {
 
             void OnPreLaunchModule() override{
                 InitializeHookCallbacks();
+            }
+
+            void OnShutdown() override {
+                //Force high resolution timer for Windows
+                #if REX_PLATFORM_WIN32
+                    timeEndPeriod(1);
+                #endif  // REX_PLATFORM_WIN32
             }
 
             std::optional<rex::PathConfig> OnFinalizePaths(const rex::PathConfig& defaults, std::function<void(rex::PathConfig)> resume) override {
