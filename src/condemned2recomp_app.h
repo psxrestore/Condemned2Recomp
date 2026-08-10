@@ -27,11 +27,14 @@ namespace Condemned2 {
 
             void OnPreSetup(rex::RuntimeConfig& config) override {
                 config.gpu_plugin = "xenos";
-                InitializeHookCallbacks();
             }
 
             void OnConfigurePaths(rex::PathConfig& paths) override {
                 SetDefaultPaths(paths);
+            }
+
+            void OnPreLaunchModule() override{
+                InitializeHookCallbacks();
             }
 
             std::optional<rex::PathConfig> OnFinalizePaths(const rex::PathConfig& defaults, std::function<void(rex::PathConfig)> resume) override {
