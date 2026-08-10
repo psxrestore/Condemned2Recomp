@@ -22,26 +22,36 @@ REX_EXTERN(__imp__SetSettingValue);
 
 namespace Condemned2 {
     void InitializeHookCallbacks(){
-        for (const auto& [k, v] : _callBacks) {
-            rex::cvar::RegisterChangeCallback(k, [v](std::string_view name, std::string_view new_value) {
+        for (HookCallback _cb : _callBacks) {
+            //Register callbacks
+            rex::cvar::RegisterChangeCallback(_cb.name, [_cb](std::string_view name, std::string_view new_value) {
                 if(!new_value.empty()){
-                    uint32_t* hookPtr = reinterpret_cast<uint32_t*>(v.address);
+                    uint32_t* hookPtr = reinterpret_cast<uint32_t*>(_cb.address);
                     if(hookPtr){
-                        *hookPtr = swap_endian32(std::max((float)v.defaultValue, std::stof(std::string(new_value))));
+                        *hookPtr = swap_endian32(std::max(_cb.defaultValue, std::stod(std::string(new_value))));
+                        REXLOG_INFO("[condemned2_hooks] {}: {}", _cb.name, new_value );
                     }
                 }
             });
-            bool _bSuccess = rex::cvar::SetFlagByName(k, std::to_string(v.defaultValue)); //Set default value so callback is triggered.
+            //Set default value so callback is triggered.
+            std::string val = rex::cvar::GetFlagByName(_cb.name);
+            if(!val.empty()){
+                bool _bSuccess = rex::cvar::SetFlagByName(_cb.name, val);
+                if(_bSuccess){
+                    REXLOG_INFO("[condemned2_hooks] {}: {}", _cb.name, val );
+                }
+            }
         }
     }
 
+    //Experimental callbacks
     REX_HOOK_RAW(SetSettingValue) {
-        for (const auto& [k, v] : _newSettings) {
-            if (ctx.r3.u32 == v){
-                std::string val = rex::cvar::GetFlagByName(k);
+        for (HookCallback _cb : _newSettings) {
+            if (ctx.r3.u32 == _cb.address){
+                std::string val = rex::cvar::GetFlagByName(_cb.name);
                 if(!val.empty()){
                     ctx.f1.f64 = std::stof(val);
-                    REXLOG_INFO("[condemned2_hooks] {}: {}", k, val );
+                    REXLOG_INFO("[condemned2_hooks] {}: {}", _cb.name, val );
                 }
             }
         }
