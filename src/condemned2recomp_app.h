@@ -13,6 +13,8 @@
 #include <format>
 #include <condemned2_hooks.h>
 #include <condemned2_settings.h>
+#include <condemned2_input.h>
+#include <rex/input/input_system.h>
 #if REX_PLATFORM_WIN32
   #include <timeapi.h>
 #endif  // REX_PLATFORM_WIN32
@@ -30,6 +32,7 @@ namespace Condemned2 {
 
             void OnPreSetup(rex::RuntimeConfig& config) override {
                 config.gpu_plugin = "xenos";
+                //config.input_factory = REX_INPUT_BACKEND(rex::input::condemned2input::CreateInputSystem);
                 //Force high resolution timer for Windows
                 #if REX_PLATFORM_WIN32
                     timeBeginPeriod(1);
@@ -40,8 +43,14 @@ namespace Condemned2 {
                 SetDefaultPaths(paths);
             }
 
-            void OnPreLaunchModule() override{
-                InitializeHookCallbacks();
+            void OnPostSetup() override{
+                InitializeHookCallbacks(runtime());
+            }
+
+            std::optional<rex::PathConfig> OnFinalizePaths(const rex::PathConfig& defaults, std::function<void(rex::PathConfig)> resume) override {
+                InitializeDefaultSettings(window());
+                (void)resume;
+                return defaults;
             }
 
             void OnShutdown() override {
@@ -49,13 +58,6 @@ namespace Condemned2 {
                 #if REX_PLATFORM_WIN32
                     timeEndPeriod(1);
                 #endif  // REX_PLATFORM_WIN32
-            }
-
-            std::optional<rex::PathConfig> OnFinalizePaths(const rex::PathConfig& defaults, std::function<void(rex::PathConfig)> resume) override {
-                rex::ui::Window *curWindow = window();
-                InitializeDefaultSettings(curWindow);
-                (void)resume;
-                return defaults;
             }
     };
 
