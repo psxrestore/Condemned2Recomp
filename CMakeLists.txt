@@ -21,6 +21,7 @@ if(WIN32)
     add_executable(condemned2recomp WIN32 ${CONDEMNED2RECOMP_SOURCES})
 else()
     add_executable(condemned2recomp ${CONDEMNED2RECOMP_SOURCES})
+    target_include_directories(condemned2recomp PRIVATE "${REXSDK_DIR}/thirdparty/imgui" )
 endif()
 
 rexglue_setup_target(condemned2recomp)

@@ -52,5 +52,6 @@ namespace Condemned2 {
         {"mnk_invert_y","false"},
         //Other
         {"audio_maxqframes","16"},
+        {"vulkan_allow_present_mode_immediate", "true"},
     };
 }
