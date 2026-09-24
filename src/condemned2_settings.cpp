@@ -1,3 +1,7 @@
+// condemned2recomp - ReXGlue Recompiled Project
+//
+// Condemned 2 RexGue Cvars
+
 #include <rex/rex_app.h>
 #include <rex/cvar.h>
 #include <rex/ui/keybinds.h>
@@ -12,10 +16,7 @@ namespace Condemned2 {
         // Use default assets directory path if one isn't provided!
         const auto exe_dir = paths.config_path.parent_path();
         if (paths.game_data_root.empty()) {
-            const auto assets_dir = exe_dir / "Assets";
-            if (std::filesystem::is_regular_file(assets_dir / "default.xex")) {
-                paths.game_data_root = assets_dir;
-            }
+            paths.game_data_root = exe_dir / "Assets";
         }
         //Keep cache folder in the same folder as EXE
         const auto cur_cache_folder = rex::filesystem::GetUserFolder() / "condemned2recomp" / "cache";
@@ -28,7 +29,7 @@ namespace Condemned2 {
         //Window settings
         if( curWindow ){
             curWindow->SetTitle(std::format("Condemned 2: Bloodshot - v{}", _version ) ); //Updated Window title
-            if ( curWindow && !rex::cvar::HasNonDefaultValue("Fullscreen") ){ //Setup fullscreen if it wasn't defined.
+            if ( curWindow && !rex::cvar::HasNonDefaultValue("fullscreen") ){ //Setup fullscreen if it wasn't defined.
                 curWindow->SetFullscreen(true);
             }
         }
@@ -37,7 +38,11 @@ namespace Condemned2 {
         for (const auto& [k, v] : _defaultConfig) {
             if ( !rex::cvar::HasNonDefaultValue(k) ){
                 bool bSuccess = rex::cvar::SetFlagByName(k, v);
-                REXLOG_INFO("{}: {}", k, v );
+                if(bSuccess){
+                    REXLOG_INFO("[condemned2_settings] {}: {}", k, v );
+                }else{
+                    REXLOG_ERROR("[condemned2_settings] Failing to set {}: {}", k, v );
+                }
             }
         }
     }

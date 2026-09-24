@@ -1,0 +1,87 @@
+# Condemned2Recomp Asm Midhooks
+
+[functions]
+#################################################
+# Mid hooks for look yaw/pitch sensitivity curve#
+#################################################
+[[midasm_hook]]
+address = 0x8230A4B4
+name = "Mouse_SensitivityCurve"
+registers = ["f0", "f30"]
+after_instruction = false
+jump_address_on_true = 0x8230A4B8
+
+[[midasm_hook]]
+address = 0x8230A4C8 
+name = "Mouse_SensitivityCurve"
+registers = ["f0", "f30"]
+after_instruction = false
+jump_address_on_true = 0x8230A4CC
+
+[[midasm_hook]]
+address = 0x8230A514 
+name = "Mouse_SensitivityCurve"
+registers = ["f0", "f29"]
+after_instruction = false
+jump_address_on_true = 0x8230A518
+
+[[midasm_hook]]
+address = 0x8230A528
+name = "Mouse_SensitivityCurve"
+registers = ["f0", "f29"]
+after_instruction = false
+jump_address_on_true = 0x8230A52C
+
+############################
+#Video Resolution Mid Hooks#
+############################
+#InitializeVideo
+[[midasm_hook]]
+address = 0x82129C40
+name = "Set_Video_Width"
+registers = ["r10"]
+after_instruction = false
+
+[[midasm_hook]]
+address = 0x82129C44
+name = "Set_Video_Height"
+registers = ["r9"]
+after_instruction = false
+
+#InitializeDisplay
+[[midasm_hook]]
+address = 0x8212A4FC
+name = "Set_Video_Width"
+registers = ["r9"]
+after_instruction = false
+
+[[midasm_hook]]
+address = 0x8212A500
+name = "Set_Video_Height"
+registers = ["r8"]
+after_instruction = false
+
+[[midasm_hook]]
+address = 0x8212A510
+name = "Set_Video_Width"
+registers = ["r4"]
+after_instruction = false
+
+[[midasm_hook]]
+address = 0x8212A508
+name = "Set_Video_Height"
+registers = ["r5"]
+after_instruction = false
+
+#
+[[midasm_hook]]
+address = 0x82122EE0
+name = "Set_Video_Width"
+registers = ["r9"]
+after_instruction = false
+
+[[midasm_hook]]
+address = 0x82122EE8
+name = "Set_Video_Height"
+registers = ["r8"]
+after_instruction = false

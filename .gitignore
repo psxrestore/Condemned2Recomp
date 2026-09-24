@@ -1,4 +1,10 @@
-# Ignore files that might be game asssets
-assets/
+# Ignore files that might be game assets
 *.xex
+*.xexp
 *.iso
+*.exe
+*.Arch02
+assets/*
+!assets/fonts/
+out/*
+generated/default/*

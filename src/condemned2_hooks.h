@@ -1,3 +1,7 @@
+// condemned2recomp - ReXGlue Recompiled Project
+//
+// Condemned 2 Various Hooks
+
 #pragma once
 
 #include <rex/rex_app.h>
@@ -10,30 +14,47 @@
 #include <string>
 #include <unordered_map>
 #include <format>
+#include <chrono>
 
 namespace Condemned2 {
-    void InitializeHookCallbacks(rex::Runtime* _runtime);
+    class Condemned2Hook  {
+        public:
+            explicit Condemned2Hook();
+            ~Condemned2Hook();
 
-    static void set_float(uint8_t* physicalAddress, float newValue) {
-        rex::memory::store_and_swap<float>(physicalAddress, static_cast<float>(newValue));
-    };
+            using HookValue = std::variant<int, float, double>;
+            struct HookCallback{
+                std::string name;
+                HookValue defaultValue;
+                uint32_t address;
+            };
 
-    struct HookCallback{
-        std::string name;
-        double defaultValue;
-        uint32_t address;
-    };
+            void InitializeHookCallbacks(rex::Runtime* runtime);
+            void SetMemoryFunc(const HookCallback& _cb, HookValue new_value);
+            void SetMemoryFunc(const HookCallback& _cb, std::string new_value);
+            void ExecCallbackFunc(PPCContext& __restrict ctx, std::vector<HookCallback> _Settings);
+            
+            static void set_double(uint8_t* physicalAddress, double newValue) {
+                rex::memory::store_and_swap<double>(physicalAddress, static_cast<double>(newValue));
+            };
+            static void set_float(uint8_t* physicalAddress, float newValue) {
+                rex::memory::store_and_swap<float>(physicalAddress, static_cast<float>(newValue));
+            };
+            static void set_int(uint8_t* physicalAddress, int newValue) {
+                rex::memory::store_and_swap<int>(physicalAddress, static_cast<int>(newValue));
+            };
+            static std::string GetSafeString(std::string_view new_value);
 
-    static std::vector<HookCallback> _callBacks = { 
-        {"condemned2_maxfps", 200.0, 0x8292864C }, 
-        {"condemned2_fov", 0.01745329238474369, 0x8209C2AC },
-        {"condemned2_update_rate", 60.0, 0x82013B14 },
-        {"condemned2_input_sensitivity_max", 1.0, 0x82028EC4}
-    };
+            void AddInitialHook(const HookCallback& _cb){_initialSet.push_back(_cb);};
+            void AddHook(const HookCallback& _cb){_callBacks.push_back(_cb);};
+        private:
+            rex::Runtime* _runtime;
+            rex::memory::Memory* _memory;
 
-    static std::vector<HookCallback> _newSettings = { 
-        {"condemned2_body_cap_total_count", 32.0, 0x820143F0}, 
-        {"condemned2_body_cap_radius_count", 8.0, 0x82014404}, 
-        {"condemned2_body_cap_radius", 8.0, 0x82014418},
+            std::vector<HookCallback> _initialSet = {};
+            std::vector<HookCallback> _callBacks = { 
+                {"condemned2_update_rate", 60.0f, 0x82013B14 },
+                {"condemned2_input_sensitivity_max", 1.0f, 0x82028EC4},
+            };
     };
 }
