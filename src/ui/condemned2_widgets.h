@@ -24,7 +24,7 @@ namespace Condemned2 {
       };
 
       //Custom widgets
-      void AddText(const char* label, ImFont* font, ImVec2 size = ImVec2(256, 64), ImVec4 textColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f), float fontSize = 0.0f, bool isInside = false, bool isWrapped = false, bool isCentered = true){
+      static void AddText(const char* label, ImFont* font, ImVec2 size = ImVec2(256, 64), ImVec4 textColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f), float fontSize = 0.0f, bool isInside = false, bool isWrapped = false, bool isCentered = true){
         ImDrawList* dl = ImGui::GetWindowDrawList();
         float wrapWidth = ImGui::GetContentRegionAvail().x;
         ImVec2 textSize;
@@ -51,7 +51,7 @@ namespace Condemned2 {
         }
       }
 
-      bool AddButton(const char* label, ImFont* font, ImVec2 size = ImVec2(256, 64), float fontSize = 0.0f){
+      static bool AddButton(const char* label, ImFont* font, ImVec2 size = ImVec2(256, 64), float fontSize = 0.0f){
         ImGui::InvisibleButton((std::string(label) + "##id").c_str(), size);     
         ImDrawList* dl = ImGui::GetWindowDrawList();
         ImVec2 p0 = ImGui::GetItemRectMin();
@@ -65,7 +65,7 @@ namespace Condemned2 {
         return clicked;
       }
 
-      void AddProgressBar(float frac, ImFont* font, ImVec2 size){
+      static void AddProgressBar(float frac, ImFont* font, ImVec2 size){
         ImDrawList* dl = ImGui::GetWindowDrawList();
         ImVec2 p0 = ImGui::GetCursorScreenPos();
         ImGui::Dummy(size);
@@ -78,7 +78,7 @@ namespace Condemned2 {
         AddText(perc.c_str(), font, size, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 24.0f, true );
       }
       
-      void DrawGradientBackground(ImVec2 end = ImVec2(256, 64), ImVec2 start = ImVec2(0, 0), bool outline = true,
+      static void DrawGradientBackground(ImVec2 end = ImVec2(256, 64), ImVec2 start = ImVec2(0, 0), bool outline = true,
       ImVec4 p0 = ImVec4(0.02f, 0.02f, 0.02f, 1.0f), 
       ImVec4 p1 = ImVec4(0.02f, 0.02f, 0.02f, 1.0f), 
       ImVec4 p2 = ImVec4(0.0f, 0.0f, 0.0f, 1.0f), 
@@ -95,7 +95,9 @@ namespace Condemned2 {
         }
       }
 
-      void DrawPath(std::vector<SimplePath> path, ImVec2 offset, float scale, float thickness, ImVec4 baseColor, ImVec2 size = ImVec2(512, 200), float jitter = 3.0f, int passes = 5) {
+      // Stylized jitter
+      // Renders path multiple times, jittering their positions
+      static void DrawPath(std::vector<SimplePath> path, double& pathUpdate, std::vector<std::vector<ImVec2>>&cachedJittered, ImVec2 offset, float scale, float thickness, ImVec4 baseColor, ImVec2 size = ImVec2(512, 200), float jitter = 3.0f, int passes = 5) {
         ImDrawList* dl = ImGui::GetForegroundDrawList();
         ImGui::Dummy(size);
         ImVec2 origin = ImGui::GetItemRectMin();
@@ -121,8 +123,6 @@ namespace Condemned2 {
           }
           pathUpdate = timeNow;
         }
-        // Stylized jitter
-        // Renders path multiple times, jittering their positions
         ImU32 passCol = ImGui::ColorConvertFloat4ToU32(baseColor);
         for (int pass = 0; pass < passes; ++pass) {
           for (size_t p = 0; p < path.size(); ++p) {
@@ -132,9 +132,5 @@ namespace Condemned2 {
           }
         }
       }
-    private:
-        //Paths
-        double pathUpdate = 0.0;
-        std::vector<std::vector<ImVec2>> cachedJittered;
   };
 }

@@ -73,7 +73,6 @@ namespace Condemned2 {
 
       GameLauncherDialog(rex::ui::ImGuiDrawer* drawer, const rex::PathConfig& defaults, std::function<void(rex::PathConfig)> resume, std::function<void()> onClose, rex::ui::WindowedAppContext* ctx, std::unordered_map<std::string, ImFont*> loadedFonts, LauncherState startState = LauncherState::Intro)
         : ImGuiDialog(drawer), _paths(defaults), _resume(std::move(resume)), _onClose(std::move(onClose)), _app_context(ctx), _loadedFonts(loadedFonts) {
-        renderer = std::make_unique<UIWidgets>();
         curState = startState;
         //Intro Dialog
         stateTable[LauncherState::Intro] = {
@@ -247,7 +246,7 @@ namespace Condemned2 {
           ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
           ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus |
           ImGuiWindowFlags_NoNavFocus);
-        renderer->DrawGradientBackground(io.DisplaySize, ImVec2(0,0), false, ImVec4(0.0f, 0.0f, 0.0f, 0.2f),  ImVec4(0.0f, 0.0f, 0.0f, 0.2f),  ImVec4(0.15f, 0.01f, 0.01f, 1.0f), ImVec4(0.15f, 0.01f, 0.01f, 1.0f) );  
+        UIWidgets::DrawGradientBackground(io.DisplaySize, ImVec2(0,0), false, ImVec4(0.0f, 0.0f, 0.0f, 0.2f),  ImVec4(0.0f, 0.0f, 0.0f, 0.2f),  ImVec4(0.15f, 0.01f, 0.01f, 1.0f), ImVec4(0.15f, 0.01f, 0.01f, 1.0f) );  
         if (auto it = stateTable.find(curState); it != stateTable.end()) {
           if( !it->second.header.empty() ){
             ShowDialog_Window(io, it->second);
@@ -305,8 +304,8 @@ namespace Condemned2 {
         //Header
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16, 16));
         ImGui::BeginChild("HeaderSection", ImVec2(640,320), false); 
-        renderer->DrawPath(g_logoPaths, ImVec2(-32, -170), 4.0f, 0.1f, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-        renderer->AddText(newStep.header.c_str(), _loadedFonts["ZTNature-Black"], ImVec2(640, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f),  48.0f); //Subtitle
+        UIWidgets::DrawPath(g_logoPaths, pathUpdate, cachedJittered, ImVec2(-32, -170), 4.0f, 0.1f, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        UIWidgets::AddText(newStep.header.c_str(), _loadedFonts["ZTNature-Black"], ImVec2(640, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f),  48.0f); //Subtitle
         ImGui::PopStyleVar();
         ImGui::EndChild();
   
@@ -324,9 +323,9 @@ namespace Condemned2 {
         ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
         ImGui::BeginChild("InnerWindow", newStep.stepSettings.windowSize, true);
         if( !newStep.body.empty()){
-          renderer->AddText(newStep.body.c_str(), _loadedFonts["ZTNature-Medium"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 24.0f, false, true, false );
+          UIWidgets::AddText(newStep.body.c_str(), _loadedFonts["ZTNature-Medium"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 24.0f, false, true, false );
           if( newStep.stepSettings.showError ){
-            renderer->AddText(GetErrorSnapshot().c_str(), _loadedFonts["ZTNature-Medium"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 24.0f, false, true, false );
+            UIWidgets::AddText(GetErrorSnapshot().c_str(), _loadedFonts["ZTNature-Medium"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 24.0f, false, true, false );
           }
         }
         //Add custom controls
@@ -338,7 +337,7 @@ namespace Condemned2 {
           ImGui::BeginChild("progressLog", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 50), true, ImGuiWindowFlags_HorizontalScrollbar);
           std::string logSnapshot = GetLogSnapshot();
           if(!logSnapshot.empty()){
-            renderer->AddText(logSnapshot.c_str(), _loadedFonts["ZTNature-Black"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 14.0f, false, false, false );
+            UIWidgets::AddText(logSnapshot.c_str(), _loadedFonts["ZTNature-Black"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 14.0f, false, false, false );
             if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
               ImGui::SetScrollHereY(1.0f);
             }
@@ -347,20 +346,20 @@ namespace Condemned2 {
         }
         //Progress bar for processes started in a new thread
         if(newStep.stepSettings.hasProgressBar){
-          renderer->AddProgressBar(GetCurrentProgress(), _loadedFonts["ZTNature-Medium"], ImVec2(ImGui::GetContentRegionAvail().x, 48));
+          UIWidgets::AddProgressBar(GetCurrentProgress(), _loadedFonts["ZTNature-Medium"], ImVec2(ImGui::GetContentRegionAvail().x, 48));
         }
         ImGui::EndChild();
         ImGui::PopStyleColor();
         ImGui::PopStyleVar();
-        renderer->DrawGradientBackground(ImGui::GetItemRectMin(), ImGui::GetItemRectMax() );
+        UIWidgets::DrawGradientBackground(ImGui::GetItemRectMin(), ImGui::GetItemRectMax() );
 
         //Menu Commands
         if(!newStep.stepSettings.hasProgressBar){
-          if (renderer->AddButton(newStep.stepSettings.nextBtnLabel.c_str(), _loadedFonts["ZTNature-Black"])) {
+          if (UIWidgets::AddButton(newStep.stepSettings.nextBtnLabel.c_str(), _loadedFonts["ZTNature-Black"])) {
             pendingState = newStep.stepSettings.nextState;
           }          
           ImGui::SameLine();
-          if (renderer->AddButton("Cancel",  _loadedFonts["ZTNature-Black"])) {
+          if (UIWidgets::AddButton("Cancel",  _loadedFonts["ZTNature-Black"])) {
             pendingState = LauncherState::Exit;
           }
         }
@@ -370,9 +369,9 @@ namespace Condemned2 {
       //Select Iso controls
       void ShowDialog_SelectIso(ImGuiIO& io) {
         //Asset Path
-        renderer->AddText("Installation Path", _loadedFonts["ZTNature-Medium"], ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, ImGui::GetContentRegionAvail().y * 0.5f));
+        UIWidgets::AddText("Installation Path", _loadedFonts["ZTNature-Medium"], ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, ImGui::GetContentRegionAvail().y * 0.5f));
         ImGui::SameLine();
-        if (renderer->AddButton(_paths.game_data_root.string().c_str(), _loadedFonts["ZTNature-Black"], ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.5f), 21.0f)) {
+        if (UIWidgets::AddButton(_paths.game_data_root.string().c_str(), _loadedFonts["ZTNature-Black"], ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.5f), 21.0f)) {
           auto selectedDir = RexGlueSuite::FileDialog::OpenDirectoryPicker(_workPath.string().c_str());
           if(selectedDir){
             std::string path = selectedDir.value();
@@ -382,9 +381,9 @@ namespace Condemned2 {
           }
         }
         //ISO Path
-        renderer->AddText("Game ISO Path", _loadedFonts["ZTNature-Medium"], ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, ImGui::GetContentRegionAvail().y));
+        UIWidgets::AddText("Game ISO Path", _loadedFonts["ZTNature-Medium"], ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, ImGui::GetContentRegionAvail().y));
         ImGui::SameLine();
-        if (renderer->AddButton(_workPath.string().c_str(), _loadedFonts["ZTNature-Black"], ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), 21.0f)) {
+        if (UIWidgets::AddButton(_workPath.string().c_str(), _loadedFonts["ZTNature-Black"], ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), 21.0f)) {
           auto selectedFile = RexGlueSuite::FileDialog::OpenFilePicker();
           if(selectedFile){
             std::string path = selectedFile.value();
@@ -403,29 +402,29 @@ namespace Condemned2 {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(64, 64));
         ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
         ImGui::BeginChild("PCMenu", ImVec2(io.DisplaySize.x, menuHeight), true);
-        if (renderer->AddButton("Resume", _loadedFonts["ZTNature-Black"])) { 
+        if (UIWidgets::AddButton("Resume", _loadedFonts["ZTNature-Black"])) { 
           CloseDialog();
         }
         ImGui::SameLine();
-        renderer->AddText("Resume playing.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
+        UIWidgets::AddText("Resume playing.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
         
-        if (renderer->AddButton("Native Menu", _loadedFonts["ZTNature-Black"])) { 
+        if (UIWidgets::AddButton("Native Menu", _loadedFonts["ZTNature-Black"])) { 
           CloseDialog();
         }
         ImGui::SameLine();
-        renderer->AddText("Open Condemned 2's native menu.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
+        UIWidgets::AddText("Open Condemned 2's native menu.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
 
-        if (renderer->AddButton("PC Settings", _loadedFonts["ZTNature-Black"])) { 
+        if (UIWidgets::AddButton("PC Settings", _loadedFonts["ZTNature-Black"])) { 
           CloseDialog();
         }
         ImGui::SameLine();
-        renderer->AddText("Configure video and input settings.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
+        UIWidgets::AddText("Configure video and input settings.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
 
-        if (renderer->AddButton("Quit", _loadedFonts["ZTNature-Black"])) { 
+        if (UIWidgets::AddButton("Quit", _loadedFonts["ZTNature-Black"])) { 
           pendingState = LauncherState::Exit;
         }
         ImGui::SameLine();
-        renderer->AddText("Quit to desktop.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f);
+        UIWidgets::AddText("Quit to desktop.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f);
 
         ImGui::EndChild();
         ImGui::PopStyleColor();
@@ -433,7 +432,6 @@ namespace Condemned2 {
       }
 
       private:
-        std::unique_ptr<UIWidgets> renderer;
         LauncherState curState = LauncherState::Intro;
         std::atomic<LauncherState> pendingState{LauncherState::None};
         std::unordered_map<LauncherState, LauncherStep> stateTable;
@@ -455,6 +453,8 @@ namespace Condemned2 {
 
         //Paths
         //Animated logo
+        double pathUpdate = 0.0;
+        std::vector<std::vector<ImVec2>> cachedJittered;
         std::vector<UIWidgets::SimplePath> g_logoPaths = { 
           {{{55.607968f,192.01928f} ,{-5.026348f,4.45373f} ,{-3.181236f,-2.64043f} ,{-1.463365f,-3.27667f} ,{0.668057f,-7.25321f} ,{5.408099f,-3.11761f} ,{3.785669f,6.13978f}}},
           {{{63.274744f,195.32776f} ,{2.926733f,-0.60443f} ,{2.322301f,-2.79949f} ,{0.508997f,-1.90874f} ,{-0.572622f,-2.64042f} ,{-2.354114f,-3.37211f} ,{-3.881104f,1.36793f} ,{-2.067803f,4.99454f} ,{1.20887f,3.21304f}}, true},
