@@ -43,6 +43,8 @@ namespace Condemned2 {
         TUExtract, // Extracts Title Update ( Might only show briefly on small Title Updates )
         //Menus
         PCMenu, // Separate PC only menu
+        PCSettings, //Adjusts PC game settings
+        PCGameSettings, //Adjusts game settings
         PCGraphics, //Adjusts graphics settings
         PCInput, //Adjust input settings
         //Errors
@@ -54,8 +56,14 @@ namespace Condemned2 {
       };
 
       struct LauncherDialog{
-        std::string nextBtnLabel = "Next";
+        std::function<void(ImGuiIO& io)> onDraw;
+        std::function<void()> onStart;
         LauncherState nextState = LauncherState::None;
+
+        std::string header = "Recompilation";
+        std::string body;
+        std::string nextBtnLabel = "Next";
+
         ImVec2 windowSize = ImVec2(640, 480); 
         bool hasLog = false;
         bool hasProgressBar = false;
@@ -63,141 +71,150 @@ namespace Condemned2 {
         bool customOnly = false;
       };
 
-      struct LauncherStep{
-        std::string header;
-        std::string body;
-        LauncherDialog stepSettings;
-        std::function<void(ImGuiIO& io)> onDraw;
-        std::function<void()> onStart;
-      };
-
       GameLauncherDialog(rex::ui::ImGuiDrawer* drawer, const rex::PathConfig& defaults, std::function<void(rex::PathConfig)> resume, std::function<void()> onClose, rex::ui::WindowedAppContext* ctx, std::unordered_map<std::string, ImFont*> loadedFonts, LauncherState startState = LauncherState::Intro)
         : ImGuiDialog(drawer), _paths(defaults), _resume(std::move(resume)), _onClose(std::move(onClose)), _app_context(ctx), _loadedFonts(loadedFonts) {
         curState = startState;
         //Intro Dialog
-        stateTable[LauncherState::Intro] = {
-          "Recompilation", 
-          "To run Condemned 2: Bloodshot, a legal copy of the game ISO is required for extraction as well as the latest Title Update.\n\nYou must have at least 8gb of free disk space to continue.", 
-          {"Begin", LauncherState::IsoSelect, ImVec2(640, 160)}
-        };
+        LauncherDialog Intro;
+        Intro.nextState = LauncherState::IsoSelect;
+        Intro.body = "To run Condemned 2: Bloodshot, a legal copy of the game ISO is required for extraction as well as the latest Title Update.\n\nYou must have at least 8gb of free disk space to continue.";
+        Intro.nextBtnLabel = "Begin";
+        Intro.windowSize = ImVec2(640, 160);
+        stateTable[LauncherState::Intro] = Intro;
 
         //ISO Extraction Dialogs
-        stateTable[LauncherState::IsoSelect] = {
-          "Game ISO Extraction",
-          "Please select the Condemned 2 ISO to extract it to the selected Assets folder.",
-          {"Extract", LauncherState::IsoExtract, ImVec2(1024, 160) },
-          [this](ImGuiIO& io){ ShowDialog_SelectIso(io); },
-          [&](){
-            ClearLog(); //Clear logs from previous attempt at ISO extraction
-            if(_workPath.empty()){
-              _workPath = _paths.config_path.parent_path() / "game.iso";
-            }
-            if (!_paths.game_data_root.empty() && std::filesystem::is_regular_file(_paths.game_data_root / "default.xex")) {
-              pendingState = LauncherState::TUSelect;
-            }
+        LauncherDialog IsoSelect;
+        IsoSelect.nextState = LauncherState::IsoExtract;
+        IsoSelect.header = "Game ISO Extraction";
+        IsoSelect.body = "Please select the Condemned 2 ISO to extract it to the selected Assets folder.";
+        IsoSelect.nextBtnLabel = "Extract";
+        IsoSelect.windowSize = ImVec2(1024, 160);
+        IsoSelect.onDraw = [this](ImGuiIO& io){ ShowDialog_SelectIso(io); };
+        IsoSelect.onStart =[&](){
+          ClearLog(); //Clear logs from previous attempt at ISO extraction
+          if(_workPath.empty()){
+            _workPath = _paths.config_path.parent_path() / "game.iso";
+          }
+          if (!_paths.game_data_root.empty() && std::filesystem::is_regular_file(_paths.game_data_root / "default.xex")) {
+            pendingState = LauncherState::TUSelect;
           }
         };
+        stateTable[LauncherState::IsoSelect] = IsoSelect;
 
-        stateTable[LauncherState::IsoExtract] = {
-          "Extracting Game ISO", 
-          "Please wait while the Game ISO extracts...",
-          {"", LauncherState::None, ImVec2(1024, 768), true, true},
-          nullptr,
-          [&](){
-            workerThread = RexGlueSuite::Xdvdfs::NewThread(_workPath, _copiedBytes, _fullSize, {
-              _paths.game_data_root, 
-              [&]() {pendingState = LauncherState::TUSelect;}, 
-              [&](std::string err) {
-                SetError( std::move(err) ); 
-                pendingState = LauncherState::ISOFailed;
-              },
-              [&](std::string log) { SetLog( std::move(log) ); }
-            });
-          }
+        LauncherDialog IsoExtract;
+        IsoExtract.header = "Extracting Game ISO";
+        IsoExtract.body = "Please wait while the Game ISO extracts...";
+        IsoExtract.windowSize = ImVec2(1024, 768);
+        IsoExtract.hasLog = true;
+        IsoExtract.hasProgressBar = true;
+        IsoExtract.onStart = [&](){
+          workerThread = RexGlueSuite::Xdvdfs::NewThread(_workPath, _copiedBytes, _fullSize, {
+            _paths.game_data_root, 
+            [&]() {pendingState = LauncherState::TUSelect;}, 
+            [&](std::string err) {
+              SetError( std::move(err) ); 
+              pendingState = LauncherState::ISOFailed;
+            },
+            [&](std::string log) { SetLog( std::move(log) ); }
+          });
         };
+        stateTable[LauncherState::IsoExtract] = IsoExtract;
 
         //Title Update Dialogs
-        stateTable[LauncherState::TUSelect] = {
-          "Title Update Installation",
-          "This will now download and extract the latest Title Update for Condemned 2: Bloodshot.",
-          {"Download", LauncherState::TUDownload, ImVec2(640, 160) },
-          nullptr,
-          [&](){
-            ClearLog(); //Clear logs from ISO extraction
-            std::string filename = REXCVAR_GET(condemned2_tu_patch_filename);
-            _workPath = _paths.config_path.parent_path() / filename;
-            if (std::filesystem::is_regular_file(_paths.game_data_root / "default.xexp")) {
-              pendingState = LauncherState::Complete;
+        LauncherDialog TUSelect;
+        TUSelect.nextState = LauncherState::TUDownload;
+        TUSelect.header = "Title Update Installation";
+        TUSelect.body = "This will now download and extract the latest Title Update for Condemned 2: Bloodshot.";
+        TUSelect.nextBtnLabel = "Download";
+        TUSelect.windowSize = ImVec2(640, 160);
+        TUSelect.onStart = [&](){
+          ClearLog(); //Clear logs from ISO extraction
+          std::string filename = REXCVAR_GET(condemned2_tu_patch_filename);
+          _workPath = _paths.config_path.parent_path() / filename;
+          if (std::filesystem::is_regular_file(_paths.game_data_root / "default.xexp")) {
+            pendingState = LauncherState::Complete;
+          }
+        };
+        stateTable[LauncherState::TUSelect] = TUSelect;
+
+        LauncherDialog TUDownload;
+        TUDownload.header = "Downloading Title Update";
+        TUDownload.body = "Please wait while the Title Update downloads...";
+        TUDownload.windowSize = ImVec2(640, 120);
+        TUDownload.hasProgressBar = true;
+        TUDownload.onStart =  [&](){
+          std::string url = REXCVAR_GET(condemned2_tu_patch_dl_link);
+          std::string hash = REXCVAR_GET(condemned2_tu_patch_hash);
+          workerThread = RexGlueSuite::Downloader::NewThread(url, hash, _copiedBytes, _fullSize, {
+            _workPath, 
+            [&]() {pendingState = LauncherState::TUExtract;}, 
+            [&](std::string err) {
+              SetError( std::move(err) ); 
+              pendingState = LauncherState::TUFailed;
             }
-          }
+          });
         };
+        stateTable[LauncherState::TUDownload] = TUDownload;
 
-        stateTable[LauncherState::TUDownload] = {
-          "Downloading Title Update", 
-          "Please wait while the Title Update downloads...",
-          {"", LauncherState::None, ImVec2(640, 120), false, true},
-          nullptr,
-          [&](){
-            std::string url = REXCVAR_GET(condemned2_tu_patch_dl_link);
-            std::string hash = REXCVAR_GET(condemned2_tu_patch_hash);
-            workerThread = RexGlueSuite::Downloader::NewThread(url, hash, _copiedBytes, _fullSize, {
-              _workPath, 
-              [&]() {pendingState = LauncherState::TUExtract;}, 
-              [&](std::string err) {
-                SetError( std::move(err) ); 
-                pendingState = LauncherState::TUFailed;
-              }
-            });
-          }
+        LauncherDialog TUExtract;
+        TUExtract.header = "Extracting Title Update";
+        TUExtract.body = "Please wait while the Title Update extracts...";
+        TUExtract.windowSize = ImVec2(640, 120);
+        TUExtract.hasProgressBar = true;
+        TUExtract.onStart = [&](){
+          workerThread = RexGlueSuite::TitleUpdater::NewThread(_workPath, _copiedBytes, _fullSize, {
+            _paths.game_data_root,
+            [&]() {pendingState = LauncherState::Complete;}, 
+            [&](std::string err) {
+              SetError( std::move(err) ); 
+              pendingState = LauncherState::TUFailed;
+            },
+            [&](std::string log) { SetLog( std::move(log) ); }
+          });
         };
-
-        stateTable[LauncherState::TUExtract] = {
-          "Extracting Title Update", 
-          "Please wait while the Title Update extracts...",
-          {"", LauncherState::None, ImVec2(640, 120), false, true },
-          nullptr,
-          [&](){
-            workerThread = RexGlueSuite::TitleUpdater::NewThread(_workPath, _copiedBytes, _fullSize, {
-              _paths.game_data_root,
-              [&]() {pendingState = LauncherState::Complete;}, 
-              [&](std::string err) {
-                SetError( std::move(err) ); 
-                pendingState = LauncherState::TUFailed;
-              },
-              [&](std::string log) { SetLog( std::move(log) ); }
-            });
-          }
-        };
+        stateTable[LauncherState::TUExtract] = TUExtract;
 
         //Error Dialogs
-        stateTable[LauncherState::ISOFailed] = {
-          "ISO Extraction Failed", 
-          "The selected ISO failed to extract. Please check the latest log for more information!!!", 
-          {"Retry", LauncherState::IsoSelect, ImVec2(640, 160), false, false, true}
-        };
-        
-        stateTable[LauncherState::TUFailed] = {
-          "Title Update Failed", 
-          "The selected Title Update failed to extract. Please check the latest log for more information!!!",
-          {"Retry", LauncherState::TUDownload, ImVec2(640, 160), false, false, true }
-        };
+        LauncherDialog ISOFailed;
+        ISOFailed.nextState = LauncherState::IsoSelect;
+        ISOFailed.header = "ISO Extraction Failed";
+        ISOFailed.body = "The selected ISO failed to extract. Please check the latest log for more information!!!";
+        ISOFailed.nextBtnLabel = "Retry";
+        ISOFailed.windowSize = ImVec2(640, 160);
+        ISOFailed.showError = true;
+
+        LauncherDialog TUFailed;
+        TUFailed.nextState = LauncherState::IsoSelect;
+        TUFailed.header = "Title Update Failed";
+        TUFailed.body = "The selected Title Update failed to extract. Please check the latest log for more information!!!";
+        TUFailed.nextBtnLabel = "Retry";
+        TUFailed.windowSize = ImVec2(640, 160);
+        TUFailed.showError = true;
 
         //PC Menus
-        stateTable[LauncherState::PCMenu] = {
-          "Recompilation",
-          "",
-          {"", LauncherState::None, ImVec2(0,0), false, false, false, true},
-          [this](ImGuiIO& io){ ShowDialog_PCMenu(io); }
-        };
+        LauncherDialog PCMenu;
+        PCMenu.customOnly = true;
+        PCMenu.onDraw = [this](ImGuiIO& io){ ShowDialog_PCMenu(io); };
+        stateTable[LauncherState::PCMenu] = PCMenu;
+
+        LauncherDialog PCSettings;
+        PCSettings.customOnly = true;
+        PCSettings.onDraw = [this](ImGuiIO& io){ ShowDialog_SettingMenus(io); };
+        stateTable[LauncherState::PCSettings] = PCSettings;
+
+        LauncherDialog PCGameSettings;
+        PCGameSettings.customOnly = true;
+        PCGameSettings.onDraw = [this](ImGuiIO& io){ ShowDialog_PCGameSettings(io); };
+        stateTable[LauncherState::PCGameSettings] = PCGameSettings;
 
         //End States
-        LauncherStep stepExit;
+        LauncherDialog stepExit;
         stepExit.onStart = [&](){
           _app_context->QuitFromUIThread();
         };
         stateTable[LauncherState::Exit] = stepExit;
 
-        LauncherStep stepComplete;
+        LauncherDialog stepComplete;
         stepComplete.onStart = [&](){CloseDialog();};
         stateTable[LauncherState::Complete] = stepComplete;
       }
@@ -249,7 +266,7 @@ namespace Condemned2 {
         UIWidgets::DrawGradientBackground(io.DisplaySize, ImVec2(0,0), false, ImVec4(0.0f, 0.0f, 0.0f, 0.2f),  ImVec4(0.0f, 0.0f, 0.0f, 0.2f),  ImVec4(0.15f, 0.01f, 0.01f, 1.0f), ImVec4(0.15f, 0.01f, 0.01f, 1.0f) );  
         if (auto it = stateTable.find(curState); it != stateTable.end()) {
           if( !it->second.header.empty() ){
-            ShowDialog_Window(io, it->second);
+            ShowDialog_OnDraw(io, it->second);
           }
         }
         ImGui::End();
@@ -299,7 +316,7 @@ namespace Condemned2 {
 
       //Launcher Dialogs
       //Base Dialogs
-      void ShowDialog_Window(ImGuiIO& io, const LauncherStep& newStep) {
+      void ShowDialog_OnDraw(ImGuiIO& io, const LauncherDialog& newStep) {
         ImDrawList* dl = ImGui::GetWindowDrawList();
         //Header
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16, 16));
@@ -310,21 +327,25 @@ namespace Condemned2 {
         ImGui::EndChild();
   
         //Draw custom controls only
-        if(newStep.stepSettings.customOnly && newStep.onDraw){
+        if(newStep.customOnly && newStep.onDraw){
           newStep.onDraw(io);
           return;
         }
 
+        ShowDialog_Window(io, newStep);
+      }
+
+      void ShowDialog_Window(ImGuiIO& io, const LauncherDialog& newStep) {
         //Dialog
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-        ImGui::BeginChild("OuterWindow", ImVec2(newStep.stepSettings.windowSize.x,newStep.stepSettings.windowSize.y + 80.0f), false);
+        ImGui::BeginChild("OuterWindow", ImVec2(newStep.windowSize.x,newStep.windowSize.y + 80.0f), false);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16, 16));
         ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
-        ImGui::BeginChild("InnerWindow", newStep.stepSettings.windowSize, true);
+        ImGui::BeginChild("InnerWindow", newStep.windowSize, true);
         if( !newStep.body.empty()){
           UIWidgets::AddText(newStep.body.c_str(), _loadedFonts["ZTNature-Medium"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 24.0f, false, true, false );
-          if( newStep.stepSettings.showError ){
+          if( newStep.showError ){
             UIWidgets::AddText(GetErrorSnapshot().c_str(), _loadedFonts["ZTNature-Medium"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 24.0f, false, true, false );
           }
         }
@@ -333,7 +354,7 @@ namespace Condemned2 {
           newStep.onDraw(io);
         }
         //Prints messages from processes running in a new thread
-        if(newStep.stepSettings.hasLog){
+        if(newStep.hasLog){
           ImGui::BeginChild("progressLog", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 50), true, ImGuiWindowFlags_HorizontalScrollbar);
           std::string logSnapshot = GetLogSnapshot();
           if(!logSnapshot.empty()){
@@ -345,7 +366,7 @@ namespace Condemned2 {
           ImGui::EndChild();
         }
         //Progress bar for processes started in a new thread
-        if(newStep.stepSettings.hasProgressBar){
+        if(newStep.hasProgressBar){
           UIWidgets::AddProgressBar(GetCurrentProgress(), _loadedFonts["ZTNature-Medium"], ImVec2(ImGui::GetContentRegionAvail().x, 48));
         }
         ImGui::EndChild();
@@ -354,10 +375,12 @@ namespace Condemned2 {
         UIWidgets::DrawGradientBackground(ImGui::GetItemRectMin(), ImGui::GetItemRectMax() );
 
         //Menu Commands
-        if(!newStep.stepSettings.hasProgressBar){
-          if (UIWidgets::AddButton(newStep.stepSettings.nextBtnLabel.c_str(), _loadedFonts["ZTNature-Black"])) {
-            pendingState = newStep.stepSettings.nextState;
-          }          
+        if(!newStep.hasProgressBar){
+          if ( !newStep.nextBtnLabel.empty() ){
+            if (UIWidgets::AddButton(newStep.nextBtnLabel.c_str(), _loadedFonts["ZTNature-Black"])) {
+              pendingState = newStep.nextState;
+            }          
+          }
           ImGui::SameLine();
           if (UIWidgets::AddButton("Cancel",  _loadedFonts["ZTNature-Black"])) {
             pendingState = LauncherState::Exit;
@@ -415,7 +438,7 @@ namespace Condemned2 {
         UIWidgets::AddText("Open Condemned 2's native menu.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
 
         if (UIWidgets::AddButton("PC Settings", _loadedFonts["ZTNature-Black"])) { 
-          CloseDialog();
+          pendingState = LauncherState::PCSettings;
         }
         ImGui::SameLine();
         UIWidgets::AddText("Configure video and input settings.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
@@ -431,10 +454,53 @@ namespace Condemned2 {
         ImGui::PopStyleVar();
       }
 
+      void ShowDialog_PCGameSettings(ImGuiIO& io) {
+        ImGui::BeginChild("PCSettingOptions", ImVec2(io.DisplaySize.x * 0.4, ImGui::GetContentRegionAvail().y), false);
+        ShowDialog_SettingMenus(io);
+        ImGui::EndChild();
+      }
+
+      void ShowDialog_SettingMenus(ImGuiIO& io) {
+        int menuHeight = 500;
+        float remaining = ImGui::GetContentRegionAvail().y;
+        ImGui::Dummy(ImVec2(0.0f, remaining - menuHeight));
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(64, 64));
+        ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
+        ImGui::BeginChild("PCSettings", ImVec2(io.DisplaySize.x, menuHeight), true);
+        if (UIWidgets::AddButton("Game", _loadedFonts["ZTNature-Black"])) { 
+          pendingState = LauncherState::PCGameSettings;
+        }
+        ImGui::SameLine();
+        UIWidgets::AddText("Change game settings.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
+        
+        if (UIWidgets::AddButton("Graphics", _loadedFonts["ZTNature-Black"])) { 
+          CloseDialog();
+        }
+        ImGui::SameLine();
+        UIWidgets::AddText("Configure graphic settings.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
+
+        if (UIWidgets::AddButton("Input", _loadedFonts["ZTNature-Black"])) { 
+          CloseDialog();
+        }
+        ImGui::SameLine();
+        UIWidgets::AddText("Configure input", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
+
+        if (UIWidgets::AddButton("Back", _loadedFonts["ZTNature-Black"])) { 
+          pendingState = LauncherState::PCMenu;
+        }
+        ImGui::SameLine();
+        UIWidgets::AddText("Go back to the PC menu", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f);
+
+        ImGui::EndChild();
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
+      }
+
       private:
         LauncherState curState = LauncherState::Intro;
         std::atomic<LauncherState> pendingState{LauncherState::None};
-        std::unordered_map<LauncherState, LauncherStep> stateTable;
+        std::unordered_map<LauncherState, LauncherDialog> stateTable;
 
         std::thread workerThread;
         std::function<void(rex::PathConfig)> _resume;
