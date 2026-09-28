@@ -10,21 +10,36 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(generated/rexglue.cmake)
 
-# CURL Dependency (Used for downloader)
+# -------------------------------------------------
+# CURL Dependency
 # -------------------------------------------------
 include(FetchContent)
 FetchContent_Declare(
     curl
     GIT_REPOSITORY https://github.com/curl/curl.git
     GIT_TAG curl-8_10_1
+    GIT_SHALLOW TRUE
 )
-set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
-set(CURL_USE_OPENSSL OFF CACHE BOOL "" FORCE)
+if(WIN32)
+    set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
+else()
+    set(CURL_USE_OPENSSL ON CACHE BOOL "" FORCE)
+endif()
 set(CURL_USE_WOLFSSL OFF CACHE BOOL "" FORCE)
 set(CURL_USE_MBEDTLS OFF CACHE BOOL "" FORCE)
 set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(curl)
+# -------------------------------------------------
+# PicoSHA2 Dependency
+# -------------------------------------------------
+FetchContent_Declare(
+    pico
+    GIT_REPOSITORY https://github.com/okdshin/PicoSHA2
+    GIT_TAG 161cb3fc4170fa7a3eca9e582cebd27cc4d1fe29
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(pico)
 # -------------------------------------------------
 
 # Sources
@@ -46,3 +61,4 @@ endif()
 rexglue_setup_target(condemned2recomp)
 
 target_link_libraries(condemned2recomp PRIVATE CURL::libcurl)
+target_include_directories(condemned2recomp PRIVATE ${pico_SOURCE_DIR})

@@ -4,7 +4,7 @@
 
 #pragma once
 
-//#include <rex/crypto/sha256.h>
+#include "picosha2.h"
 #include <curl/curl.h>
 #include <fstream>
 #include <atomic>
@@ -14,6 +14,12 @@ namespace RexGlueSuite {
     class Downloader {
         public:
             static constexpr size_t kMaxDownloadSize = 256ull * 1024 * 1024; 
+            static std::string sha256(std::string_view data) {
+                std::string hash256_hex;
+                picosha2::hash256_hex_string(data.begin(), data.end(), hash256_hex);
+                return hash256_hex;
+            }
+
             static size_t write_to_vector(void* ptr, size_t size, size_t nmemb, void* userdata) {
                 auto* buffer = static_cast<std::vector<uint8_t>*>(userdata);
                 size_t total = size * nmemb;
@@ -76,13 +82,12 @@ namespace RexGlueSuite {
                     return false;
                 }
 
-                //RexGlue 0.10.0 moved Sha256!!!
-                //const std::string result = rex::crypto::sha256(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size()));
-                //if (result != hash) {
-                //    _processInfo.on_error(std::format("[rexglue_suite_downloader] SHA-256 mismatch. Target={}, Result={}", hash, result));
-                //    return false;
-                //}
-                //REXLOG_INFO("[rexglue_suite_downloader] SHA-256 match. Target={}, Result={}", hash, result);
+                const std::string result = sha256(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size()));
+                if (result != hash) {
+                    _processInfo.on_error(std::format("[rexglue_suite_downloader] SHA-256 mismatch. Target={}, Result={}", hash, result));
+                    return false;
+                }
+                REXLOG_INFO("[rexglue_suite_downloader] SHA-256 match. Target={}, Result={}", hash, result);
 
                 std::ofstream outFile(_processInfo._basePath, std::ios::binary | std::ios::trunc);
                 if (!outFile) {
