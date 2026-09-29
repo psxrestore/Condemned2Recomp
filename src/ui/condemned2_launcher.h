@@ -355,7 +355,7 @@ namespace Condemned2 {
         }
         //Prints messages from processes running in a new thread
         if(newStep.hasLog){
-          ImGui::BeginChild("progressLog", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 50), true, ImGuiWindowFlags_HorizontalScrollbar);
+          ImGui::BeginChild("progressLog", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 64), true, ImGuiWindowFlags_HorizontalScrollbar);
           std::string logSnapshot = GetLogSnapshot();
           if(!logSnapshot.empty()){
             UIWidgets::AddText(logSnapshot.c_str(), _loadedFonts["ZTNature-Black"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 14.0f, false, false, false );

@@ -1,6 +1,6 @@
 // condemned2recomp - ReXGlue Recompiled Project
 //
-// Customize your app by overriding virtual hooks from rex::ReXApp.
+// condemned2recomp RexApp
 
 #pragma once
 
@@ -104,7 +104,7 @@ namespace Condemned2 {
 
             void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override {
                 //PC Menu Bind
-                rex::ui::RegisterBind("bind_pc_menu", "Escape", "Toggle PC Menu overlay", [this, drawer] {
+                /*rex::ui::RegisterBind("bind_pc_menu", "Escape", "Toggle PC Menu overlay", [this, drawer] {
                     app_context().CallInUIThreadDeferred([this, drawer]() mutable {
                         if (_launcherDialog ) {
                             _launcherDialog.reset();
@@ -118,7 +118,7 @@ namespace Condemned2 {
                             }, &app_context(), loadedFonts, GameLauncherDialog::LauncherState::PCMenu);
                         }
                     });
-                });
+                });*/
 
                 //Imgui Window Dialog Theme
                 //Separate from the Condemned2Recomp launcher
