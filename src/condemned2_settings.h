@@ -42,6 +42,8 @@ namespace Condemned2 {
 
         //Vulkan
         {"vulkan_allow_present_mode_immediate", "true"},
+        {"vulkan_async_skip_incomplete_frames", "false"},
+        //{"async_shader_compilation", "false"},
 
         //Texture cache
         {"texture_cache_memory_limit_render_to_texture","256"},
