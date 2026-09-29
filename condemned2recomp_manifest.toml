@@ -2,12 +2,13 @@
 
 [project]
 name = "condemned2recomp"
-sdk_version = "0.9.0"
+sdk_version = "0.10.0"
 game_root = "assets"
 
 [entrypoint]
 file_path = "assets/default.xex"
 out_directory_path = "generated/default"
 includes = [
-	"condemned2recomp_config.toml",
+	"condemned2recomp_config_tu.toml", # condemned2recomp_config.toml only supports the pre-patch version!
+	"condemned2recomp_config_midhooks.toml", # ASM Midhooks for Condemned2recomp
 ]

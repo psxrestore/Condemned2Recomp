@@ -4,4 +4,4 @@
 
 #include "condemned2recomp_app.h"
 
-REX_DEFINE_APP(condemned2recomp, Condemned2recompApp::Create)
+REX_DEFINE_APP(condemned2recomp, Condemned2::Condemned2recompApp::Create)
