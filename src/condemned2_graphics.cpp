@@ -25,7 +25,7 @@
 #include <condemned2_hooks.h>
 
 //Rex Cvars
-REXCVAR_DEFINE_STRING(condemned2_native_resolution, "1280x720","Condemned 2/Graphics", "Native Resolution").allowed({
+/*REXCVAR_DEFINE_STRING(condemned2_native_resolution, "1280x720","Condemned 2/Graphics", "Native Resolution").allowed({
     "1280x720", 
     "1280x768", 
     "1280x800", 
@@ -35,7 +35,7 @@ REXCVAR_DEFINE_STRING(condemned2_native_resolution, "1280x720","Condemned 2/Grap
     int width, height;
     sscanf_s(std::string(v).c_str(), "%dx%d", &width, &height);
     return width >= 1280 && height >= 720; 
-});
+});*/
 REXCVAR_DEFINE_DOUBLE(condemned2_maxfps, 0.0, "Condemned 2/Graphics", "Max FPS");
 REXCVAR_DEFINE_DOUBLE(condemned2_fov, 0.01745329238474369, "Condemned 2/Graphics", "Camera FOV");
 REXCVAR_DEFINE_BOOL(condemned2_screen_effects, "true", "Condemned 2/Graphics", "Screen Effects");
@@ -61,9 +61,9 @@ namespace rex::graphics::condemned2graphics {
         REXLOG_INFO("[condemned2graphics] Starting...");
         g_condemned2_graphics = this;
 
-        rex::cvar::RegisterChangeCallback("condemned2_native_resolution", [&](std::string_view name, std::string_view new_value) {
+        /*rex::cvar::RegisterChangeCallback("condemned2_native_resolution", [&](std::string_view name, std::string_view new_value) {
             _screenResolution = GetScreenResolutionFromString(std::string( new_value ));
-        });
+        });*/
         rex::cvar::RegisterChangeCallback("condemned2_object_lod_quality", [&](std::string_view name, std::string_view new_value) {
             _objectLOD = GetLODFromString(std::string( new_value ));
         });
@@ -75,7 +75,7 @@ namespace rex::graphics::condemned2graphics {
             _hook->SetMemoryFunc({"condemned2_screen_effects", 0.0f, 0x8293D4EC}, _screenEffect );
         });
         
-        _screenResolution = GetScreenResolutionFromString(REXCVAR_GET(condemned2_native_resolution));
+        //_screenResolution = GetScreenResolutionFromString(REXCVAR_GET(condemned2_native_resolution));
         _shadowLOD = GetLODFromString(REXCVAR_GET(condemned2_shadow_lod_quality));
         _objectLOD = GetLODFromString(REXCVAR_GET(condemned2_object_lod_quality));
         _screenEffect = GetScreenEffectFromString(std::to_string(REXCVAR_GET(condemned2_screen_effects)));

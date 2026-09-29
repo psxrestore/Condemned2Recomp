@@ -54,6 +54,7 @@ namespace Condemned2 {
             }
 
             void OnPostSetup() override{
+                InitializeDefaultSettings(window());
                 _hooks->InitializeHookCallbacks(runtime());
             }
 
@@ -74,7 +75,6 @@ namespace Condemned2 {
             }
 
             std::optional<rex::PathConfig> OnFinalizePaths(const rex::PathConfig& defaults, std::function<void(rex::PathConfig)> resume) override {
-                InitializeDefaultSettings(window());
                 defaultPaths = defaults;
                 if (!IsInstalled()) {
                     app_context().CallInUIThreadDeferred([this, resume = std::move(resume)]() mutable {
