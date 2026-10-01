@@ -50,12 +50,12 @@ namespace Condemned2 {
             }
 
             void OnConfigurePaths(rex::PathConfig& paths) override {
-                SetDefaultPaths(paths);
+                Condemned2Settings::SetDefaultPaths(paths);
             }
 
             void OnPostSetup() override{
-                InitializeDefaultSettings(window());
                 _hooks->InitializeHookCallbacks(runtime());
+                Condemned2Settings::InitializeDefaultSettings(defaultPaths);
             }
 
             void OnShutdown() override {
@@ -75,6 +75,7 @@ namespace Condemned2 {
             }
 
             std::optional<rex::PathConfig> OnFinalizePaths(const rex::PathConfig& defaults, std::function<void(rex::PathConfig)> resume) override {
+                Condemned2Settings::InitializeRequiredSettings(window());
                 defaultPaths = defaults;
                 if (!IsInstalled()) {
                     app_context().CallInUIThreadDeferred([this, resume = std::move(resume)]() mutable {

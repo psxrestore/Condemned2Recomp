@@ -1,6 +1,6 @@
 // condemned2recomp - ReXGlue Recompiled Project
 //
-// Condemned 2 RexGue Cvars
+// Condemned 2 Cvar Handler
 
 #include <rex/rex_app.h>
 #include <rex/cvar.h>
@@ -11,8 +11,10 @@
 #include <format>
 #include <condemned2_settings.h>
 
+REXCVAR_DEFINE_STRING(condemned2_app_version, "", "Condemned 2/Setup", "App Version").lifecycle(rex::cvar::Lifecycle::kInitOnly);
+
 namespace Condemned2 {
-    void SetDefaultPaths(rex::PathConfig& paths) {
+    void Condemned2Settings::SetDefaultPaths(rex::PathConfig& paths) {
         // Use default assets directory path if one isn't provided!
         const auto exe_dir = paths.config_path.parent_path();
         if (paths.game_data_root.empty()) {
@@ -25,7 +27,8 @@ namespace Condemned2 {
         }
     }
 
-    void InitializeDefaultSettings(rex::ui::Window *curWindow) {
+    //Initializes required settings, sets window's title.
+    void Condemned2Settings::InitializeRequiredSettings(rex::ui::Window *curWindow) {
         //Window settings
         if( curWindow ){
             curWindow->SetTitle(std::format("Condemned 2: Bloodshot - v{}", _version ) ); //Updated Window title
@@ -33,9 +36,23 @@ namespace Condemned2 {
                 curWindow->SetFullscreen(true);
             }
         }
-        // Initialize default settings.
-        REXLOG_INFO("Initializing default settings...");
-        for (const auto& [k, v] : _defaultConfig) {
+        InitializeSettings("required", _requiredSettings);
+    }
+
+    //Initializes default vlaues and saves .toml when one isn't found, or if version number differs!
+    void Condemned2Settings::InitializeDefaultSettings(rex::PathConfig& paths) {
+        std::string cfgVersion = rex::cvar::GetFlagByName("condemned2_app_version");
+        if(!std::filesystem::is_regular_file(paths.config_path) || cfgVersion.empty() || cfgVersion != _version ) { 
+            InitializeSettings("default", _defaultConfig);
+            rex::cvar::SetFlagByName("condemned2_app_version", _version); //Set version
+            rex::cvar::SaveConfig(paths.config_path);
+        }
+    }
+
+    //Initializes CVars based on provided settings.
+    void Condemned2Settings::InitializeSettings(std::string name, std::vector<ConfigSetting> settings){
+        REXLOG_INFO("Initializing {} settings...", name);
+        for (const auto& [k, v] : settings) {
             if ( !rex::cvar::HasNonDefaultValue(k) ){
                 bool bSuccess = rex::cvar::SetFlagByName(k, v);
                 if(bSuccess){
