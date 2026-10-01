@@ -29,16 +29,18 @@ namespace rex::graphics::condemned2graphics{
          static float GetScreenEffectFromString(std::string new_value);
          float GetScreenEffect() { return _screenEffect; }
 
-         static int GetLODFromString( std::string lodQuality );
+         //Shadow Quality
+         static int GetShadowLODFromString( std::string lodQuality );
+         static int GetMinShadowLODFromString( std::string lodQuality );
          int GetShadowLOD() { return _shadowLOD; }
-         int GetObjectLOD() { return _objectLOD; }
+         int GetMinShadowLOD() { return _minShadowLOD; }
 
       private:
          Condemned2::Condemned2Hook *_hook;
 
          std::pair<int,int> _screenResolution = { 1280, 720 };
          int _shadowLOD = -1;
-         int _objectLOD = -1;
+         int _minShadowLOD = -1;
          float _screenEffect = 2.0189438f;
    };
 }  // namespace rex::graphics::condemned2graphics

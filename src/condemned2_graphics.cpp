@@ -39,12 +39,11 @@
 REXCVAR_DEFINE_DOUBLE(condemned2_maxfps, 0.0, "Condemned 2/Graphics", "Max FPS");
 REXCVAR_DEFINE_DOUBLE(condemned2_fov, 0.01745329238474369, "Condemned 2/Graphics", "Camera FOV");
 REXCVAR_DEFINE_BOOL(condemned2_screen_effects, "true", "Condemned 2/Graphics", "Screen Effects");
-REXCVAR_DEFINE_STRING(condemned2_object_lod_quality, "Native","Condemned 2/Graphics", "Object LOD").allowed({"Native", "Low", "Medium", "High"});
-REXCVAR_DEFINE_STRING(condemned2_shadow_lod_quality, "Native","Condemned 2/Graphics", "Shadow LOD").allowed({"Native", "Low", "Medium", "High", "Off"});
+REXCVAR_DEFINE_STRING(condemned2_shadow_quality, "High","Condemned 2/Graphics", "Shadow Quality").allowed({"Native", "Low", "Medium", "High"});
 
 //Externs
 REX_EXTERN(__imp__ApplyDisplaySettings);
-REX_EXTERN(__imp__Global_ObjectLOD);
+REX_EXTERN(__imp__Global_MinShadowLOD);
 REX_EXTERN(__imp__Global_ShadowLOD);
 REX_EXTERN(__imp__GetBoolCvar);
 REX_EXTERN(__imp__SetConfigCvar);
@@ -64,20 +63,19 @@ namespace rex::graphics::condemned2graphics {
         /*rex::cvar::RegisterChangeCallback("condemned2_native_resolution", [&](std::string_view name, std::string_view new_value) {
             _screenResolution = GetScreenResolutionFromString(std::string( new_value ));
         });*/
-        rex::cvar::RegisterChangeCallback("condemned2_object_lod_quality", [&](std::string_view name, std::string_view new_value) {
-            _objectLOD = GetLODFromString(std::string( new_value ));
+        //_screenResolution = GetScreenResolutionFromString(REXCVAR_GET(condemned2_native_resolution));
+
+        rex::cvar::RegisterChangeCallback("condemned2_shadow_quality", [&](std::string_view name, std::string_view new_value) {
+            _minShadowLOD = GetMinShadowLODFromString(std::string( new_value ));
+            _shadowLOD = GetShadowLODFromString(std::string( new_value ));
         });
-        rex::cvar::RegisterChangeCallback("condemned2_shadow_lod_quality", [&](std::string_view name, std::string_view new_value) {
-            _shadowLOD = GetLODFromString(std::string( new_value ));
-        });
+        _minShadowLOD = GetMinShadowLODFromString(REXCVAR_GET(condemned2_shadow_quality));
+        _shadowLOD = GetShadowLODFromString(REXCVAR_GET(condemned2_shadow_quality));
+
         rex::cvar::RegisterChangeCallback("condemned2_screen_effects", [&](std::string_view name, std::string_view new_value) {
             _screenEffect = GetScreenEffectFromString( std::string( new_value ) );
             _hook->SetMemoryFunc({"condemned2_screen_effects", 0.0f, 0x8293D4EC}, _screenEffect );
         });
-        
-        //_screenResolution = GetScreenResolutionFromString(REXCVAR_GET(condemned2_native_resolution));
-        _shadowLOD = GetLODFromString(REXCVAR_GET(condemned2_shadow_lod_quality));
-        _objectLOD = GetLODFromString(REXCVAR_GET(condemned2_object_lod_quality));
         _screenEffect = GetScreenEffectFromString(std::to_string(REXCVAR_GET(condemned2_screen_effects)));
 
         //First-time only
@@ -94,16 +92,20 @@ namespace rex::graphics::condemned2graphics {
     Condemned2Graphics::~Condemned2Graphics() = default;
 
     //Level of Detail
-    int Condemned2Graphics::GetLODFromString( std::string lodQuality){
-        if(lodQuality == "Off") return 3;
-        else if(lodQuality == "High") return 2;
+    int Condemned2Graphics::GetMinShadowLODFromString( std::string lodQuality ){
+        if(lodQuality == "High") return 2;
         else if(lodQuality == "Medium") return 1;
         else if(lodQuality == "Low") return 0;
         return -1; //Native 
     }
-    REX_HOOK_RAW(Global_ObjectLOD) {
-        __imp__Global_ObjectLOD(ctx, base);
-        int lod = g_condemned2_graphics->GetObjectLOD();
+    int Condemned2Graphics::GetShadowLODFromString( std::string lodQuality ){
+        if(lodQuality == "High" || lodQuality == "Medium") return 0;
+        return -1; //Native 
+    }
+
+    REX_HOOK_RAW(Global_MinShadowLOD) {
+        __imp__Global_MinShadowLOD(ctx, base);
+        int lod = g_condemned2_graphics->GetMinShadowLOD();
         if ( lod >= 0 ){
             ctx.r3.u32 = lod;
         }

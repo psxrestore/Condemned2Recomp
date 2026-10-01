@@ -50,8 +50,8 @@
 
 # Level of Detail
 0x8212A400 = {name="ApplyDisplaySettings"}
-0x8247F668 = {name="Global_ObjectLOD"}
 0x8237A218 = {name="Global_ShadowLOD"}
+0x8247F668 = {name="Global_MinShadowLOD"}
 
 # Graphics
 0x8212A4D8 = {name="InitializeDisplay"}
