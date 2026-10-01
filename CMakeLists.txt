@@ -11,35 +11,30 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(generated/rexglue.cmake)
 
 # -------------------------------------------------
-# CURL Dependency
+# Dependencies
 # -------------------------------------------------
 include(FetchContent)
-FetchContent_Declare(
-    curl
-    GIT_REPOSITORY https://github.com/curl/curl.git
-    GIT_TAG curl-8_10_1
-    GIT_SHALLOW TRUE
-)
+set(_prev_shared ${BUILD_SHARED_LIBS})
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(HTTP_ONLY ON CACHE BOOL "" FORCE)
+set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)
 if(WIN32)
     set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
 else()
     set(CURL_USE_OPENSSL ON CACHE BOOL "" FORCE)
 endif()
-set(CURL_USE_WOLFSSL OFF CACHE BOOL "" FORCE)
-set(CURL_USE_MBEDTLS OFF CACHE BOOL "" FORCE)
-set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(curl)
-# -------------------------------------------------
-# PicoSHA2 Dependency
-# -------------------------------------------------
-FetchContent_Declare(
-    pico
+FetchContent_Declare(curl
+    GIT_REPOSITORY https://github.com/curl/curl.git
+    GIT_TAG curl-8_10_1
+    GIT_SHALLOW TRUE)
+FetchContent_Declare(pico
     GIT_REPOSITORY https://github.com/okdshin/PicoSHA2
     GIT_TAG 161cb3fc4170fa7a3eca9e582cebd27cc4d1fe29
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(pico)
+    GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(curl pico)
+set(BUILD_SHARED_LIBS ${_prev_shared} CACHE BOOL "" FORCE)
 # -------------------------------------------------
 
 # Sources

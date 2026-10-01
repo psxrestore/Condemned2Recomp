@@ -58,27 +58,34 @@ namespace RexGlueSuite {
 
                 curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
                 curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 15L);
-                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 600L);
+
                 curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
                 curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L);
+
+                curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1024L);
+                curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
+                curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, (long)CURLSSLOPT_NO_REVOKE);
                 
                 std::pair<std::atomic<uint64_t>*, std::atomic<uint64_t>*> progressData{&_extractedBytes, &_fullSize};
                 curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
                 curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
                 curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &progressData);
 
+                char errbuf[CURL_ERROR_SIZE] = {};
+                curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+
                 CURLcode res = curl_easy_perform(curl);
                 long httpCode = 0;
                 curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
                 curl_easy_cleanup(curl);
 
-                if (httpCode != 200) {
-                    _processInfo.on_error(std::format("[rexglue_suite_downloader] Server returned HTTP {}", httpCode));
+                if (res != CURLE_OK) {
+                    _processInfo.on_error(std::format("[rexglue_suite_downloader] Curl error {}: {} - {} (HTTP {})", (int)res, curl_easy_strerror(res), errbuf[0] ? errbuf : "no detail", httpCode));
                     return false;
                 }
 
-                if (res != CURLE_OK){
-                    _processInfo.on_error(std::format("[rexglue_suite_downloader] Curl error {}: {} (HTTP {})", (int)res, curl_easy_strerror(res), httpCode));
+                if (httpCode != 200) {
+                    _processInfo.on_error(std::format("[rexglue_suite_downloader] Server returned HTTP {}", httpCode));
                     return false;
                 }
 
