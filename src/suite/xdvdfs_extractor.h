@@ -65,7 +65,7 @@ namespace RexGlueSuite {
       public:
         Xdvdfs() {}
 
-        static constexpr const uint64_t KNOWN_PARTITION_BASE_SECTORS[] = { 0ull, 0xFD90000ull, 0x2080000ull };
+        static constexpr const uint64_t KNOWN_PARTITION_BASE_SECTORS[] = { 0ull, 0x18300000ull, 0xFD90000ull, 0x2080000ull };
         static constexpr const char* MAGIC = "MICROSOFT*XBOX*MEDIA";
         static const size_t MAGIC_LEN = 20;
         static const size_t SECTOR_SIZE = 2048;
