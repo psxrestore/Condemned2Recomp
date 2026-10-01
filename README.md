@@ -8,21 +8,20 @@
 
 This is a static recompilation of **Condemned 2: Bloodshot (Xbox 360)** for Native PC built through RexGlue-SDK.
 
-<div align="center"><a href="https://www.youtube.com/watch?v=028_cJIhIjA"><img src="https://img.youtube.com/vi/028_cJIhIjA/maxresdefault.jpg" alt="Condemned 2 Recomp ( Preview for v0.1.1 - Performance Improvements" width="75%"></a><br>(Click thumbnail above to watch on Youtube)</div>
+<div align="center"><a href="https://www.youtube.com/watch?v=028_cJIhIjA"><img src="https://img.youtube.com/vi/028_cJIhIjA/maxresdefault.jpg" alt="Condemned 2 Recomp ( Preview for v0.1.1 - Performance Improvements )" width="75%"></a><br>(Click thumbnail above to watch on Youtube)</div>
 
 ## Controls
-
-Keyboard & mouse support is still work-in-progress! Currently, it is recommended to use a gamepad to play.
 
 | Action | Key |
 | --- | --- |
 | Movement | `W` `A` `S` `D` |
-| Use | `E` |
-| Swing Left / Aim | `LMB` |
-| Swing Right / Shoot | `RMB` |
-| Kick | `Space` |
-| Reload | `R` |
 | Sprint | `Shift` |
+| Use | `E` |
+| Kick | `Space` |
+| Swing Left / Shoot | `LMB` |
+| Swing Right / Aim | `RMB` |
+| Throw Weapon/Item | `G` |
+| Reload | `R` |
 | Flashlight | `F` |
 | Check | `H` |
 | Pause | `Esc` |
