@@ -18,12 +18,6 @@ namespace Condemned2 {
 
     static std::string _version = "0.2.0"; // Application version
     static std::vector<std::pair<std::string, std::string>> _defaultConfig = { // Default Settings
-        //Display Settings
-        {"window_width","1920"},
-        {"window_height","1080"},
-        {"video_mode_width","1920"},
-        {"video_mode_height","1080"},
-
         //Graphic Settings
         {"native_2x_msaa", "false"},
         {"anisotropic_override", "2"},
