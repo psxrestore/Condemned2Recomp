@@ -31,7 +31,7 @@ namespace Condemned2 {
     void Condemned2Settings::InitializeSettings(const rex::PathConfig& paths, rex::ui::Window *curWindow) {
         //Initializes required settings, sets window's title.
         if( curWindow ){
-            curWindow->SetTitle(std::format("Condemned 2: Bloodshot - v{}", _version ) ); //Updated Window title
+            curWindow->SetTitle(std::format("{} - v{}", _title, _version ) ); //Updated Window title
             if ( curWindow && !rex::cvar::HasNonDefaultValue("fullscreen") ){ //Setup fullscreen if it wasn't defined.
                 curWindow->SetFullscreen(true);
             }

@@ -25,6 +25,7 @@ namespace Condemned2 {
             static void InitializeSettingsList(std::string name, std::vector<ConfigSetting> settings);
 
         private:
+            inline static const std::string _title = "Condemned 2: Bloodshot"; // Window title
             inline static const std::string _version = "0.2.2"; // Application version
             inline static const std::vector<ConfigSetting> _requiredSettings = { // Required Settings 
                 //DX12
