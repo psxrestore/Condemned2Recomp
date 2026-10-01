@@ -13,13 +13,13 @@
 namespace RexGlueSuite {
     class Downloader {
         public:
-            static constexpr size_t kMaxDownloadSize = 256ull * 1024 * 1024; 
             static std::string sha256(std::string_view data) {
                 std::string hash256_hex;
                 picosha2::hash256_hex_string(data.begin(), data.end(), hash256_hex);
                 return hash256_hex;
             }
 
+            static constexpr size_t kMaxDownloadSize = 256ull * 1024 * 1024; 
             static size_t write_to_vector(void* ptr, size_t size, size_t nmemb, void* userdata) {
                 auto* buffer = static_cast<std::vector<uint8_t>*>(userdata);
                 size_t total = size * nmemb;

@@ -182,6 +182,7 @@ namespace Condemned2 {
         ISOFailed.nextBtnLabel = "Retry";
         ISOFailed.windowSize = ImVec2(640, 160);
         ISOFailed.showError = true;
+        stateTable[LauncherState::ISOFailed] = ISOFailed;
 
         LauncherDialog TUFailed;
         TUFailed.nextState = LauncherState::IsoSelect;
@@ -190,7 +191,8 @@ namespace Condemned2 {
         TUFailed.nextBtnLabel = "Retry";
         TUFailed.windowSize = ImVec2(640, 160);
         TUFailed.showError = true;
-
+        stateTable[LauncherState::TUFailed] = TUFailed;
+        
         //PC Menus
         LauncherDialog PCMenu;
         PCMenu.customOnly = true;
@@ -288,9 +290,9 @@ namespace Condemned2 {
         if(errorSnapshot.empty())
           return;
 
-        _logSnapshot = _logSnapshot.empty() ? errorSnapshot : _logSnapshot + "\n" + errorSnapshot;
         _errorSnapshot = std::move(errorSnapshot);
-        REXLOG_ERROR("{}", errorSnapshot);
+        _logSnapshot = _logSnapshot.empty() ? _errorSnapshot : _logSnapshot + "\n" + _errorSnapshot;
+        REXLOG_ERROR("{}", _errorSnapshot);
       }
 
       std::string GetLogSnapshot() {
