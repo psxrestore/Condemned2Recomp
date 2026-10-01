@@ -40,7 +40,7 @@ REXCVAR_DEFINE_DOUBLE(condemned2_maxfps, 0.0, "Condemned 2/Graphics", "Max FPS")
 REXCVAR_DEFINE_DOUBLE(condemned2_fov, 0.01745329238474369, "Condemned 2/Graphics", "Camera FOV");
 REXCVAR_DEFINE_BOOL(condemned2_screen_effects, "true", "Condemned 2/Graphics", "Screen Effects");
 REXCVAR_DEFINE_STRING(condemned2_object_lod_quality, "Native","Condemned 2/Graphics", "Object LOD").allowed({"Native", "Low", "Medium", "High"});
-REXCVAR_DEFINE_STRING(condemned2_shadow_lod_quality, "Native","Condemned 2/Graphics", "Shadow LOD").allowed({"Native", "Low", "Medium", "High"});
+REXCVAR_DEFINE_STRING(condemned2_shadow_lod_quality, "Native","Condemned 2/Graphics", "Shadow LOD").allowed({"Native", "Low", "Medium", "High", "Off"});
 
 //Externs
 REX_EXTERN(__imp__ApplyDisplaySettings);
@@ -95,7 +95,8 @@ namespace rex::graphics::condemned2graphics {
 
     //Level of Detail
     int Condemned2Graphics::GetLODFromString( std::string lodQuality){
-        if(lodQuality == "High") return 2;
+        if(lodQuality == "Off") return 3;
+        else if(lodQuality == "High") return 2;
         else if(lodQuality == "Medium") return 1;
         else if(lodQuality == "Low") return 0;
         return -1; //Native 

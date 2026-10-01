@@ -21,9 +21,8 @@ namespace Condemned2 {
             };
 
             static void SetDefaultPaths(rex::PathConfig& paths);
-            static void InitializeRequiredSettings(rex::ui::Window *curWindow);
-            static void InitializeDefaultSettings(rex::PathConfig& paths);
-            static void InitializeSettings(std::string name, std::vector<ConfigSetting> settings);
+            static void InitializeSettings(const rex::PathConfig& paths, rex::ui::Window *curWindow);
+            static void InitializeSettingsList(std::string name, std::vector<ConfigSetting> settings);
 
         private:
             inline static const std::string _version = "0.2.2"; // Application version

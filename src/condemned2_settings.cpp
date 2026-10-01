@@ -27,30 +27,28 @@ namespace Condemned2 {
         }
     }
 
-    //Initializes required settings, sets window's title.
-    void Condemned2Settings::InitializeRequiredSettings(rex::ui::Window *curWindow) {
-        //Window settings
+    //Initializes CVars
+    void Condemned2Settings::InitializeSettings(const rex::PathConfig& paths, rex::ui::Window *curWindow) {
+        //Initializes required settings, sets window's title.
         if( curWindow ){
             curWindow->SetTitle(std::format("Condemned 2: Bloodshot - v{}", _version ) ); //Updated Window title
             if ( curWindow && !rex::cvar::HasNonDefaultValue("fullscreen") ){ //Setup fullscreen if it wasn't defined.
                 curWindow->SetFullscreen(true);
             }
         }
-        InitializeSettings("required", _requiredSettings);
-    }
+        InitializeSettingsList("required", _requiredSettings);
 
-    //Initializes default vlaues and saves .toml when one isn't found, or if version number differs!
-    void Condemned2Settings::InitializeDefaultSettings(rex::PathConfig& paths) {
+        //Initializes default vlaues and saves .toml when one isn't found, or if version number differs!
         std::string cfgVersion = rex::cvar::GetFlagByName("condemned2_app_version");
         if(!std::filesystem::is_regular_file(paths.config_path) || cfgVersion.empty() || cfgVersion != _version ) { 
-            InitializeSettings("default", _defaultConfig);
+            InitializeSettingsList("default", _defaultConfig);
             rex::cvar::SetFlagByName("condemned2_app_version", _version); //Set version
             rex::cvar::SaveConfig(paths.config_path);
         }
     }
 
     //Initializes CVars based on provided settings.
-    void Condemned2Settings::InitializeSettings(std::string name, std::vector<ConfigSetting> settings){
+    void Condemned2Settings::InitializeSettingsList(std::string name, std::vector<ConfigSetting> settings){
         REXLOG_INFO("Initializing {} settings...", name);
         for (const auto& [k, v] : settings) {
             if ( !rex::cvar::HasNonDefaultValue(k) ){

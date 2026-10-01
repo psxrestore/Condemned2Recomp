@@ -55,7 +55,6 @@ namespace Condemned2 {
 
             void OnPostSetup() override{
                 _hooks->InitializeHookCallbacks(runtime());
-                Condemned2Settings::InitializeDefaultSettings(defaultPaths);
             }
 
             void OnShutdown() override {
@@ -75,8 +74,8 @@ namespace Condemned2 {
             }
 
             std::optional<rex::PathConfig> OnFinalizePaths(const rex::PathConfig& defaults, std::function<void(rex::PathConfig)> resume) override {
-                Condemned2Settings::InitializeRequiredSettings(window());
                 defaultPaths = defaults;
+                Condemned2Settings::InitializeSettings(defaultPaths, window());
                 if (!IsInstalled()) {
                     app_context().CallInUIThreadDeferred([this, resume = std::move(resume)]() mutable {
                         _launcherDialog = std::make_unique<GameLauncherDialog>(imgui_drawer(), defaultPaths, std::move(resume), [this]() {
