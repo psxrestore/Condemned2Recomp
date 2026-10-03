@@ -57,7 +57,6 @@ REXCVAR_DEFINE_STRING(condemned2_input_mouse, "Mixed","Condemned 2/Input/Mouse",
 REXCVAR_DEFINE_DOUBLE(condemned2_input_mouse_sensitivity, 0.075, "Condemned 2/Input/Mouse", "Mouse Sensitivity (Raw Input)").range(0.01, 1.0);
 
 //Native functions for inputs
-REX_EXTERN(__imp__Input_Initialize);
 REX_EXTERN(__imp__Input_KeyDown);
 REX_EXTERN(__imp__Input_KeyHold);
 REX_EXTERN(__imp__Input_KeyUp);
@@ -94,8 +93,8 @@ namespace rex::input::condemned2input {
     activeBinds["pause_menu"] = {SDL_SCANCODE_ESCAPE};
     activeBinds["menu_nav_up"] = {SDL_SCANCODE_UP};
     activeBinds["menu_nav_down"] = {SDL_SCANCODE_DOWN};
-    activeBinds["menu_nav_left"] = {SDL_SCANCODE_RIGHT};
-    activeBinds["menu_nav_right"] = {SDL_SCANCODE_LEFT};
+    activeBinds["menu_nav_left"] = {SDL_SCANCODE_LEFT};
+    activeBinds["menu_nav_right"] = {SDL_SCANCODE_RIGHT};
     activeBinds["menu_nav_up_alt"] = {SDL_SCANCODE_W};
     activeBinds["menu_nav_down_alt"] = {SDL_SCANCODE_S};
     activeBinds["menu_nav_left_alt"] = {SDL_SCANCODE_A};
