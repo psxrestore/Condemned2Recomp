@@ -26,7 +26,7 @@ namespace Condemned2 {
 
         private:
             inline static const std::string _title = "Condemned 2: Bloodshot"; // Window title
-            inline static const std::string _version = "0.2.2"; // Application version
+            inline static const std::string _version = "0.3.0"; // Application version
             inline static const std::vector<ConfigSetting> _requiredSettings = { // Required Settings 
                 //DX12
                 {"render_target_path_d3d12","rtv"}, 
@@ -60,23 +60,6 @@ namespace Condemned2 {
                 {"video_mode_refresh_rate","60"},
                 //PC Controls
                 {"input_backend","sdl"},
-                {"mnk_mode","true"}, // Keyboard input
-                {"mnk_mouse","false"}, // Disable as Rexglue's MNK driver interferes with Condemned 2's Input Driver
-                {"keybind_back", "Tab,Backspace"}, // Objectives / Go Back  
-                {"keybind_start", "Esc,Return"}, // Start / Menu    
-                {"keybind_left_trigger", "LMB"}, // Left swing / Fire
-                {"keybind_right_trigger", "RMB"},  // Right swing / Weapon
-                {"keybind_left_shoulder", "Shift+W"}, // Sprint
-                {"keybind_right_shoulder", "G"}, // Throw Weapon/Item
-                {"keybind_rstick_press", "Space" }, // Kick
-                {"keybind_a", "E"}, // Use / Confirm
-                {"keybind_b", "F"}, // Flashlight
-                {"keybind_x", "R"}, // Reload                 
-                {"keybind_y", "H"}, // Check / Cancel
-                {"keybind_dpad_up", "Up,1"},
-                {"keybind_dpad_down", "Down,2"},
-                {"keybind_dpad_left", "Left,3"},
-                {"keybind_dpad_right", "Right,4"},
             };
     };
 }

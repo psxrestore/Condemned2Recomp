@@ -34,6 +34,9 @@ namespace Condemned2 {
             void SetMemoryFunc(const HookCallback& _cb, std::string new_value);
             void ExecCallbackFunc(PPCContext& __restrict ctx, std::vector<HookCallback> _Settings);
             
+            static void set_pointer(uint8_t* physicalAddress, uint32_t newValue) {
+                rex::memory::store_and_swap<int>(physicalAddress, static_cast<uint32_t>(newValue));
+            };
             static void set_double(uint8_t* physicalAddress, double newValue) {
                 rex::memory::store_and_swap<double>(physicalAddress, static_cast<double>(newValue));
             };
@@ -42,6 +45,18 @@ namespace Condemned2 {
             };
             static void set_int(uint8_t* physicalAddress, int newValue) {
                 rex::memory::store_and_swap<int>(physicalAddress, static_cast<int>(newValue));
+            };
+            static uint32_t get_pointer(uint8_t* physicalAddress) {
+                return rex::memory::load<uint32_t>(physicalAddress);
+            };
+            static double get_double(uint8_t* physicalAddress) {
+                return rex::memory::load<double>(physicalAddress);
+            };
+            static float get_float(uint8_t* physicalAddress) {
+                return rex::memory::load<float>(physicalAddress);
+            };
+            static int get_int(uint8_t* physicalAddress) {
+                return rex::memory::load<int>(physicalAddress);
             };
             static std::string GetSafeString(std::string_view new_value);
 

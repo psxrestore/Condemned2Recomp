@@ -38,9 +38,10 @@ namespace Condemned2 {
         }
         InitializeSettingsList("required", _requiredSettings);
 
-        //Initializes default vlaues and saves .toml when one isn't found, or if version number differs!
+        //Initializes default values and saves .toml when one isn't found, or if version number differs!
         std::string cfgVersion = rex::cvar::GetFlagByName("condemned2_app_version");
         if(!std::filesystem::is_regular_file(paths.config_path) || cfgVersion.empty() || cfgVersion != _version ) { 
+            REXLOG_INFO("[condemned2_settings] Config out of date. Creating new config: {}", paths.config_path.string() );
             InitializeSettingsList("default", _defaultConfig);
             rex::cvar::SetFlagByName("condemned2_app_version", _version); //Set version
             rex::cvar::SaveConfig(paths.config_path);
