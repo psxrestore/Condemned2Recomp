@@ -29,8 +29,8 @@ REXCVAR_DEFINE_STRING(condemned2_input_move_forward, "W", "Condemned 2/Input/Key
 REXCVAR_DEFINE_STRING(condemned2_input_move_backward, "S", "Condemned 2/Input/Keyboard", "Backward");
 REXCVAR_DEFINE_STRING(condemned2_input_move_left, "A", "Condemned 2/Input/Keyboard", "Left");
 REXCVAR_DEFINE_STRING(condemned2_input_move_right, "D", "Condemned 2/Input/Keyboard", "Right");
-REXCVAR_DEFINE_STRING(condemned2_input_sprint, "Left Shift", "Condemned 2/Input/Keyboard", "Sprint");
-REXCVAR_DEFINE_STRING(condemned2_input_walk, "Left Alt", "Condemned 2/Input/Keyboard", "Walk");
+REXCVAR_DEFINE_STRING(condemned2_input_sprint, "Left Shift, Right Shift", "Condemned 2/Input/Keyboard", "Sprint");
+REXCVAR_DEFINE_STRING(condemned2_input_walk, "Left Alt, Right Alt", "Condemned 2/Input/Keyboard", "Walk");
 
 REXCVAR_DEFINE_STRING(condemned2_input_primary_fire, "Mouse1", "Condemned 2/Input/Keyboard", "Swing Left/Primary Fire");
 REXCVAR_DEFINE_STRING(condemned2_input_secondary_fire, "Mouse2", "Condemned 2/Input/Keyboard", "Swing Right/Secondary Fire");
@@ -90,23 +90,15 @@ namespace rex::input::condemned2input {
     }
     //Internal binds
     //Menu navigation
-    activeBinds["pause_menu"] = {SDL_SCANCODE_ESCAPE};
-    activeBinds["menu_nav_up"] = {SDL_SCANCODE_UP};
-    activeBinds["menu_nav_down"] = {SDL_SCANCODE_DOWN};
-    activeBinds["menu_nav_left"] = {SDL_SCANCODE_LEFT};
-    activeBinds["menu_nav_right"] = {SDL_SCANCODE_RIGHT};
-    activeBinds["menu_nav_up_alt"] = {SDL_SCANCODE_W};
-    activeBinds["menu_nav_down_alt"] = {SDL_SCANCODE_S};
-    activeBinds["menu_nav_left_alt"] = {SDL_SCANCODE_A};
-    activeBinds["menu_nav_right_alt"] = {SDL_SCANCODE_D};
-    activeBinds["menu_enter"] = {SDL_SCANCODE_RETURN}; 
-    activeBinds["menu_enter_alt"] = {SDL_SCANCODE_E};
-    activeBinds["menu_go_back"] = {SDL_SCANCODE_ESCAPE}; 
-    activeBinds["menu_go_back_alt"] = {SDL_SCANCODE_BACKSPACE};
-    activeBinds["menu_category_left"] = {SDL_SCANCODE_LEFT};
-    activeBinds["menu_category_left_alt"] = {SDL_SCANCODE_A};
-    activeBinds["menu_category_right"] = {SDL_SCANCODE_RIGHT};
-    activeBinds["menu_category_right_alt"] = {SDL_SCANCODE_D};
+    activeBinds["pause_menu"] = {{SDL_SCANCODE_ESCAPE}};
+    activeBinds["menu_nav_up"] = {{SDL_SCANCODE_UP, SDL_SCANCODE_W}};
+    activeBinds["menu_nav_down"] = {{SDL_SCANCODE_DOWN, SDL_SCANCODE_S}};
+    activeBinds["menu_nav_left"] = {{SDL_SCANCODE_LEFT, SDL_SCANCODE_A}};
+    activeBinds["menu_nav_right"] = {{SDL_SCANCODE_RIGHT, SDL_SCANCODE_D}};
+    activeBinds["menu_enter"] = {{SDL_SCANCODE_RETURN, SDL_SCANCODE_E}}; 
+    activeBinds["menu_go_back"] = {{SDL_SCANCODE_ESCAPE, SDL_SCANCODE_BACKSPACE}}; 
+    activeBinds["menu_category_left"] = {{SDL_SCANCODE_LEFT, SDL_SCANCODE_A}};
+    activeBinds["menu_category_right"] = {{SDL_SCANCODE_RIGHT, SDL_SCANCODE_D}};
 
     //Initialize mouse look
     rex::cvar::RegisterChangeCallback("condemned2_input_mouse", [&](std::string_view name, std::string_view new_value) {
@@ -169,22 +161,30 @@ namespace rex::input::condemned2input {
   }
 
   void Condemned2InputDriver::OnWindowAvailable(rex::ui::Window* window) {
-    if (window) {
-      attached_window_ = window;
+    if (!window) return;
+
+    if (attached_sdl_window_) {
+      SDL_DestroyWindow(attached_sdl_window_);
+      attached_sdl_window_ = nullptr;
+    }
+
+    attached_window_ = window;
+    void* native = attached_window_->GetNativeWindowHandle();
+    if (native) {
       SDL_PropertiesID props = SDL_CreateProperties();
-      HWND hwnd = static_cast<HWND>(attached_window_->GetNativeWindowHandle());
-      if (hwnd) {
-        #if REX_PLATFORM_WIN32
-          SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, hwnd);
-        #elif REX_PLATFORM_LINUX
-          Window x11_window = static_cast<Window>(attached_window_->GetNativeWindowHandle());
-          SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X11_WINDOW_NUMBER, (Sint64)x11_window);
-        #endif
-      }
-      SDL_Window* wrapped = SDL_CreateWindowWithProperties(props);
-      if(wrapped){
-        attached_sdl_window_ = wrapped;
-      }
+    #if REX_PLATFORM_WIN32
+      SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, native);
+    #elif REX_PLATFORM_LINUX
+      SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X11_WINDOW_NUMBER, (Sint64)reinterpret_cast<uintptr_t>(native));
+    #endif
+      attached_sdl_window_ = SDL_CreateWindowWithProperties(props);
+      SDL_DestroyProperties(props);
+    }
+
+    if (!attached_sdl_window_) {
+      REXLOG_INFO("[condemned2_input] Failed to create SDL Window!");
+    }else if (attached_sdl_window_) {
+      SDL_RaiseWindow(attached_sdl_window_);
     }
   }
 
@@ -239,40 +239,40 @@ namespace rex::input::condemned2input {
     // Native PC Controls
     // UI Controls
     // Navigation
-    if(!IsDown(activeBinds["menu_nav_up"]) && !IsDown(activeBinds["menu_nav_up_alt"]) && ( activeBinds["menu_nav_up"].prev || activeBinds["menu_nav_up_alt"].prev)){
+    if(!IsDown(activeBinds["menu_nav_up"]) && activeBinds["menu_nav_up"].prev ){
       NativeKeyPress(0x82, true);
     }
-    if(!IsDown(activeBinds["menu_nav_down"]) && !IsDown(activeBinds["menu_nav_down_alt"]) && ( activeBinds["menu_nav_down"].prev || activeBinds["menu_nav_down_alt"].prev)){
+    if(!IsDown(activeBinds["menu_nav_down"])  && activeBinds["menu_nav_down"].prev ){
       NativeKeyPress(0x83, true);
     }
-    if(!IsDown(activeBinds["menu_nav_left"]) && !IsDown(activeBinds["menu_nav_left_alt"]) && ( activeBinds["menu_nav_left"].prev || activeBinds["menu_nav_left_alt"].prev)){
+    if(!IsDown(activeBinds["menu_nav_left"]) && activeBinds["menu_nav_left"].prev ){
       NativeKeyPress(0x84, true);
     }
-    if(!IsDown(activeBinds["menu_nav_right"]) && !IsDown(activeBinds["menu_nav_right_alt"]) && ( activeBinds["menu_nav_right"].prev || activeBinds["menu_nav_right_alt"].prev)){
+    if(!IsDown(activeBinds["menu_nav_right"]) && activeBinds["menu_nav_right"].prev ){
       NativeKeyPress(0x85, true);
     }
-    if(Pressed(activeBinds["menu_nav_up"]) || Pressed(activeBinds["menu_nav_up_alt"])){
+    if(Pressed(activeBinds["menu_nav_up"]) ){
       NativeKeyPress(0x82);
     } 
-    if(Pressed(activeBinds["menu_nav_down"]) || Pressed(activeBinds["menu_nav_down_alt"])){
+    if(Pressed(activeBinds["menu_nav_down"])){
       NativeKeyPress(0x83);
     }
-    if(Pressed(activeBinds["menu_nav_left"]) || Pressed(activeBinds["menu_nav_left_alt"])){
+    if(Pressed(activeBinds["menu_nav_left"]) ){
       NativeKeyPress(0x84);
     }
-    if(Pressed(activeBinds["menu_nav_right"]) || Pressed(activeBinds["menu_nav_right_alt"])){
+    if(Pressed(activeBinds["menu_nav_right"]) ){
       NativeKeyPress(0x85);
     }
-    if(Pressed(activeBinds["menu_category_left"]) || Pressed(activeBinds["menu_category_left_alt"])){ //buttons |= X_INPUT_GAMEPAD_LEFT_SHOULDER
+    if(Pressed(activeBinds["menu_category_left"]) ){ //buttons |= X_INPUT_GAMEPAD_LEFT_SHOULDER
       //NativeKeyPress(0x84);
       NativeKeyPress(0x8d);
     }
-    if(Pressed(activeBinds["menu_category_right"]) || Pressed(activeBinds["menu_category_right_alt"])){ //buttons |= X_INPUT_GAMEPAD_RIGHT_SHOULDER;
+    if(Pressed(activeBinds["menu_category_right"]) ){ //buttons |= X_INPUT_GAMEPAD_RIGHT_SHOULDER;
       //NativeKeyPress(0x85);
       NativeKeyPress(0x8e);
     }
     // Commands
-    if(Pressed(activeBinds["menu_enter"])||Pressed(activeBinds["menu_enter_alt"])){ // buttons |= X_INPUT_GAMEPAD_A;
+    if(Pressed(activeBinds["menu_enter"])){ // buttons |= X_INPUT_GAMEPAD_A;
       //Submit menu confirm
       NativeKeyPress(0xa6);
       NativeKeyPress(0x5b);
@@ -284,7 +284,7 @@ namespace rex::input::condemned2input {
       NativeKeyPress(0xa7);
       NativeKeyPress(0xb7); //Used for dialogs in fight club
     }
-    if(Pressed(activeBinds["menu_go_back"])||Pressed(activeBinds["menu_go_back_alt"])){ //buttons |= X_INPUT_GAMEPAD_B;
+    if(Pressed(activeBinds["menu_go_back"])){ //buttons |= X_INPUT_GAMEPAD_B;
       NativeKeyPress(0x88);
     }
 
@@ -433,17 +433,34 @@ namespace rex::input::condemned2input {
 
   //Custom bind system
   Bind Condemned2InputDriver::ParseBind(const std::string& s) {
-    if (s == "Mouse1") return {SDL_SCANCODE_UNKNOWN, SDL_BUTTON_LEFT};
-    if (s == "Mouse2") return {SDL_SCANCODE_UNKNOWN, SDL_BUTTON_RIGHT};
-    if (s == "Mouse3") return {SDL_SCANCODE_UNKNOWN, SDL_BUTTON_MIDDLE};
-    return {SDL_GetScancodeFromName(s.c_str()), 0};
+    int curBind = 0;
+    Bind newBind;
+    std::stringstream ss(s);
+    std::string token;
+    while (getline(ss, token, ',')) {
+      if (token.empty()) continue;
+      if (curBind >= Bind::kMaxKeys) break;
+      token.erase(0, token.find_first_not_of(' '));
+      token.erase(token.find_last_not_of(' ') + 1);
+      if (token == "Mouse1") newBind.mouseMask |= SDL_BUTTON_LMASK;
+      else if (token == "Mouse2") newBind.mouseMask |= SDL_BUTTON_RMASK;
+      else if (token == "Mouse3") newBind.mouseMask |= SDL_BUTTON_MMASK;
+      else if (token == "Mouse4") newBind.mouseMask |= SDL_BUTTON_X1MASK;
+      else if (token == "Mouse5") newBind.mouseMask |= SDL_BUTTON_X2MASK;
+      newBind.keys[curBind++] = SDL_GetScancodeFromName(token.c_str());
+    }
+    return newBind;
   }
 
   bool Condemned2InputDriver::IsDown(const Bind &b) {
-      if (b.mouse){
-          return SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_MASK(b.mouse);
+      if (b.mouseMask && SDL_GetMouseState(nullptr, nullptr) & b.mouseMask){
+        return true;
       }
-      return b.key != SDL_SCANCODE_UNKNOWN && SDL_GetKeyboardState(nullptr)[b.key];
+      const bool* state = SDL_GetKeyboardState(nullptr);
+      for (SDL_Scancode k : b.keys) {
+        if(k != SDL_SCANCODE_UNKNOWN && state[k]) return true;
+      }
+      return false;
   }
 
   bool Condemned2InputDriver::Pressed(Bind& b) {

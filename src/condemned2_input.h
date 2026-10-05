@@ -24,8 +24,9 @@ namespace rex::input::condemned2input{
    };
 
    struct Bind {
-      SDL_Scancode key = SDL_SCANCODE_UNKNOWN;
-      int mouse = 0;
+      static constexpr int kMaxKeys = 4;
+      SDL_Scancode keys[kMaxKeys] = {};
+      uint32_t mouseMask = 0;
       bool prev = false;
    };
 
