@@ -242,7 +242,7 @@ namespace rex::input::condemned2input {
     if(!IsDown(activeBinds["menu_nav_up"]) && activeBinds["menu_nav_up"].prev ){
       NativeKeyPress(0x82, true);
     }
-    if(!IsDown(activeBinds["menu_nav_down"])  && activeBinds["menu_nav_down"].prev ){
+    if(!IsDown(activeBinds["menu_nav_down"]) && activeBinds["menu_nav_down"].prev ){
       NativeKeyPress(0x83, true);
     }
     if(!IsDown(activeBinds["menu_nav_left"]) && activeBinds["menu_nav_left"].prev ){
@@ -507,11 +507,9 @@ namespace rex::input::condemned2input {
 
     // Mouse Button Handling
     MouseBind mouseClick = g_condemned2_input_driver->MouseClick();
-    if(mouseClick.isMouseMiddle){ //Alt block
-      if(g_condemned2_input_driver->IsUsingMeleeWeapon()){
-        if (btn == 0x79 || btn == 0x65 || btn == 0x47 || btn == 0x7a){
-          return 1.0;
-        }
+    if(mouseClick.isMouseMiddle && g_condemned2_input_driver->IsUsingMeleeWeapon()){ //Alt block
+      if (btn == 0x79 || btn == 0x65 || btn == 0x47 || btn == 0x7a){
+        return 1.0;
       }
     }
     else if (btn == 0x79){ // Right click

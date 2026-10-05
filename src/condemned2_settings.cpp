@@ -20,9 +20,14 @@ namespace Condemned2 {
         if (paths.game_data_root.empty()) {
             paths.game_data_root = exe_dir / "Assets";
         }
+        // Keep user data inside the same folder as EXE!
+        const auto cur_userdata_folder = rex::filesystem::GetUserFolder() / "condemned2recomp";
+        if (paths.user_data_root.empty() || paths.user_data_root == cur_userdata_folder) {
+            paths.user_data_root = exe_dir / "UserData";
+        }
         //Keep cache folder in the same folder as EXE
         const auto cur_cache_folder = rex::filesystem::GetUserFolder() / "condemned2recomp" / "cache";
-        if (paths.cache_root == cur_cache_folder || paths.cache_root.empty()) {
+        if (paths.cache_root.empty() || paths.cache_root == cur_cache_folder ) {
             paths.cache_root = exe_dir / "Cache";
         }
     }
