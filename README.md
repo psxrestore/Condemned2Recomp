@@ -32,24 +32,34 @@ This is a static recompilation of **Condemned 2: Bloodshot (Xbox 360)** for Nati
 
 ### Prerequisites
 
-- [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk)
-- [Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/vs/community) **with the Desktop development with C++ workload**
+- [Visual Studio 2022 or newer Community Edition](https://visualstudio.microsoft.com/vs/community) **with the Desktop development with C++ workload** (its bundled CMake and Ninja are fine)
 - CMake 3.25+
 - LLVM/Clang 20+
 - Ninja
+- [xdvdfs](https://github.com/antangelo/xdvdfs) (optional, to unpack the ISO yourself instead of using the in-game launcher)
+
+The [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk) is included as a submodule in `thirdparty/rexglue-sdk`, no separate install needed.
+
+### Game files for codegen
+Code generation recompiles the game's executable, so place these in `assets/` before building:
+- `default.xex` from your game ISO
+- `default.xexp` from the Title Update
 
 ### Build
 #### Download
 ```
 git clone --recursive https://github.com/psxrestore/Condemned2Recomp.git
 ```
+(If you forgot `--recursive`, run `git submodule update --init --recursive`.)
 #### Windows
+Run these from an **x64 Native Tools / Developer Command Prompt** (or any shell with the MSVC environment loaded) so Clang can find the Windows SDK.
 ```
 cd Condemned2Recomp
 cmake --preset win-amd64-release
 cmake --build --preset win-amd64-release --target condemned2recomp_codegen
 cmake --build --preset win-amd64-release
 ```
+The executable ends up in `out/build/win-amd64-release/`. On first launch it asks for the ISO and downloads the Title Update, unless the game files are already in `Assets/` next to the exe.
 #### Linux **(Untested/WIP)**
 ```
 cd Condemned2Recomp
