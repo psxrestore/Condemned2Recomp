@@ -54,6 +54,7 @@ namespace Condemned2 {
             void OnPostSetup() override{
                 _hooks->InitializeHooks(runtime());
                 _graphics->InitializeGraphics();
+                _cheats->Initialize(runtime());
                 _cheats->InitializeCheats();
                 _hooks->InitializeCallbacks();
             }

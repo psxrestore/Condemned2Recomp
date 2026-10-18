@@ -23,6 +23,7 @@
 #include <imgui_internal.h>
 
 #include <condemned2_input.h>
+#include <condemned2_actions.h>
 
 // Native PC Binds
 REXCVAR_DEFINE_STRING(condemned2_input_move_forward, "W", "Condemned 2/Input/Keyboard", "Forward");
@@ -40,7 +41,7 @@ REXCVAR_DEFINE_STRING(condemned2_input_kick, "Space", "Condemned 2/Input/Keyboar
 
 REXCVAR_DEFINE_STRING(condemned2_input_taser, "T", "Condemned 2/Input/Keyboard", "Taser");
 REXCVAR_DEFINE_STRING(condemned2_input_throw, "G", "Condemned 2/Input/Keyboard", "Throw Item/Weapon");
-REXCVAR_DEFINE_STRING(condemned2_input_drop, "B", "Condemned 2/Input/Keyboard", "Drop Item/Weapon");
+REXCVAR_DEFINE_STRING(condemned2_input_drop, "Q", "Condemned 2/Input/Keyboard", "Drop Item/Weapon");
 
 REXCVAR_DEFINE_STRING(condemned2_input_forensics, "R", "Condemned 2/Input/Keyboard", "Investigate/Use Forensic Tools");
 REXCVAR_DEFINE_STRING(condemned2_input_tool_uv, "1", "Condemned 2/Input/Keyboard", "UV Light");
@@ -56,8 +57,12 @@ REXCVAR_DEFINE_STRING(condemned2_input_check, "H", "Condemned 2/Input/Keyboard",
 REXCVAR_DEFINE_STRING(condemned2_input_objectives, "Tab", "Condemned 2/Input/Keyboard", "Current Objectives");
 
 // Mouse Settings
-REXCVAR_DEFINE_STRING(condemned2_input_mouse, "Mixed","Condemned 2/Input/Mouse", "Mouse Look Mode: Native (Needs low sensitivity!), Mixed (recommended), Disable").allowed({"Native", "Mixed", "Disable"});
-REXCVAR_DEFINE_DOUBLE(condemned2_input_mouse_sensitivity, 0.075, "Condemned 2/Input/Mouse", "Mouse Sensitivity (Raw Input)").range(0.01, 1.0);
+REXCVAR_DEFINE_STRING(condemned2_input_mouse, "Mixed","Condemned 2/Input/Mouse", "Mouse Look Mode: Native (framerate independent, uses Native Mouse Sensitivity), Mixed (gamepad-style response), Disable").allowed({"Native", "Mixed", "Disable"});
+REXCVAR_DEFINE_DOUBLE(condemned2_input_mouse_sensitivity, 0.075, "Condemned 2/Input/Mouse", "Mouse Sensitivity (Raw Input, Mixed mode)").range(0.01, 1.0);
+REXCVAR_DEFINE_DOUBLE(condemned2_input_mouse_native_sensitivity, 0.1, "Condemned 2/Input/Mouse", "Native Mouse Sensitivity (degrees of turn per mouse count)").range(0.005, 2.0);
+
+// Debug
+REXCVAR_DEFINE_BOOL(condemned2_input_log, true, "Condemned 2/Input/Debug", "Log input activity: clicks, injected actions and what the game did with them");
 
 //Native functions for inputs
 REX_EXTERN(__imp__Input_KeyDown);
@@ -69,12 +74,16 @@ REX_EXTERN(__imp__Input_PlayerInput);
 REX_EXTERN(__imp__Input_OnAttackLanded);
 REX_IMPORT(Input_KeyDown, PressBind, uint32_t(uint32_t, uint32_t));
 REX_IMPORT(Input_KeyHold, HoldBind, uint32_t(uint32_t, uint32_t));
+REX_IMPORT(Input_IsCommandEnabled, IsCommandEnabled, uint32_t(uint32_t, uint32_t)); // Is this action enabled by the active command sets?
 
 //Native functions used for control schemes
 REX_EXTERN(__imp__TvAntennaAdjust); // Function that processes Radio/TV antenna adjusting
 REX_EXTERN(__imp__IsMeleeWeapon); // Checks if player's current weapon is a melee weapon
 
 namespace rex::input::condemned2input {
+  using condemned2::Action;
+  using condemned2::ActionName;
+  #define C2_INPUT_LOG(...) do { if (REXCVAR_GET(condemned2_input_log)) { REXLOG_INFO(__VA_ARGS__); } } while (0)
   namespace {constexpr rex::input::DeviceId kDevice = static_cast<rex::input::DeviceId>(0x4E4F5000); constexpr uint32_t kInputManager = 0x4005ae70;}
 
   Condemned2InputDriver* g_condemned2_input_driver = nullptr;
@@ -173,6 +182,8 @@ namespace rex::input::condemned2input {
     }
 
     attached_window_ = window;
+    window->AddInputListener(this, 0);
+    window->AddListener(this);
     void* native = attached_window_->GetNativeWindowHandle();
     if (native) {
       SDL_PropertiesID props = SDL_CreateProperties();
@@ -189,6 +200,23 @@ namespace rex::input::condemned2input {
       REXLOG_INFO("[condemned2_input] Failed to create SDL Window!");
     }else if (attached_sdl_window_) {
       SDL_RaiseWindow(attached_sdl_window_);
+    }
+  }
+
+  // Mouse wheel scrolls the investigation / menu lists (same as the Up/Down navigation binds).
+  void Condemned2InputDriver::OnMouseWheel(rex::ui::MouseEvent& e) {
+    if (isDialogOpen) return; // The settings/console windows own the wheel.
+    const int32_t scroll = e.scroll_y();
+    if (scroll == 0) return;
+    const int32_t detents = scroll / static_cast<int32_t>(rex::ui::MouseEvent::kScrollPerDetent);
+    wheelTicks_.fetch_add(detents != 0 ? detents : (scroll > 0 ? 1 : -1));
+    e.set_handled(true);
+  }
+
+  void Condemned2InputDriver::OnClosing(rex::ui::UIEvent&) {
+    if (attached_window_) {
+      attached_window_->RemoveInputListener(this);
+      attached_window_->RemoveListener(this);
     }
   }
 
@@ -253,28 +281,204 @@ namespace rex::input::condemned2input {
       }
     }
 
-    //Left Stick/Movement
+    // Native PC Controls
+    // Mouse wheel: scroll up/down through investigation choices and menu lists.
+    // The press is released on the next poll so every notch is its own press.
+    if(wheelHeldActive_){
+      NativeKeyPress(wheelHeld_, true);
+      wheelHeldActive_ = false;
+    }
+    int wheelTicks = wheelTicks_.exchange(0);
+    if(wheelTicks != 0 && !isDialogOpen){
+      wheelHeld_ = wheelTicks > 0 ? Action::MenuNavUp : Action::MenuNavDown;
+      NativeKeyPress(wheelHeld_);
+      wheelHeldActive_ = true;
+    }
+
+    // UI Controls
+    // Navigation
+    if(!IsDown(activeBinds["menu_nav_up"]) && activeBinds["menu_nav_up"].prev ){
+      NativeKeyPress(Action::MenuNavUp, true);
+    }
+    if(!IsDown(activeBinds["menu_nav_down"]) && activeBinds["menu_nav_down"].prev ){
+      NativeKeyPress(Action::MenuNavDown, true);
+    }
+    if(!IsDown(activeBinds["menu_nav_left"]) && activeBinds["menu_nav_left"].prev ){
+      NativeKeyPress(Action::MenuNavLeft, true);
+    }
+    if(!IsDown(activeBinds["menu_nav_right"]) && activeBinds["menu_nav_right"].prev ){
+      NativeKeyPress(Action::MenuNavRight, true);
+    }
+    if(Pressed(activeBinds["menu_nav_up"]) ){
+      NativeKeyPress(Action::MenuNavUp);
+    } 
+    if(Pressed(activeBinds["menu_nav_down"])){
+      NativeKeyPress(Action::MenuNavDown);
+    }
+    if(Pressed(activeBinds["menu_nav_left"]) ){
+      NativeKeyPress(Action::MenuNavLeft);
+    }
+    if(Pressed(activeBinds["menu_nav_right"]) ){
+      NativeKeyPress(Action::MenuNavRight);
+    }
+    if(Pressed(activeBinds["menu_category_left"]) ){ //buttons |= X_INPUT_GAMEPAD_LEFT_SHOULDER
+      //NativeKeyPress(Action::MenuNavLeft);
+      NativeKeyPress(Action::MenuCategoryLeft);
+    }
+    if(Pressed(activeBinds["menu_category_right"]) ){ //buttons |= X_INPUT_GAMEPAD_RIGHT_SHOULDER;
+      //NativeKeyPress(Action::MenuNavRight);
+      NativeKeyPress(Action::MenuCategoryRight);
+    }
+    // Commands
+    if(Pressed(activeBinds["menu_enter"])){ // buttons |= X_INPUT_GAMEPAD_A;
+      //Submit menu confirm
+      NativeKeyPress(Action::TaskAction);
+      NativeKeyPress(Action::MenuTabY);
+      //Menu confirm
+      NativeKeyPress(Action::MenuConfirm);
+      NativeKeyPress(Action::DialogConfirmA);
+      //In-game menu confirm
+      NativeKeyPress(Action::Use);
+      NativeKeyPress(Action::MenuUse); // Choose investigation choice
+      NativeKeyPress(Action::InGameConfirm);
+      NativeKeyPress(Action::DialogConfirmB); // Used for dialogs in fight club
+      NativeKeyPress(Action::DialogClose); // Close tutorial dialogs
+      NativeKeyPress(Action::CameraShutter); // Forensic camera photo
+      NativeKeyPress(Action::WorldUiEnter); // Enter in in-world terminals
+    }
+    // Use is a hold: the forensic scanner scans while it is down and special moves finish when it
+    // is released, so the game needs the OFF event as well as the ON (a gamepad sends both).
+    {
+      const bool useDown = !isDialogOpen && (IsDown(activeBinds["menu_enter"]) || IsDown(activeBinds["condemned2_input_use"]));
+      if(!useDown && useHeld_){
+        NativeKeyPress(Action::Use, true);
+      }
+      useHeld_ = useDown;
+    }
+    if(Pressed(activeBinds["menu_go_back"])){ //buttons |= X_INPUT_GAMEPAD_B;
+      NativeKeyPress(Action::MenuBack);
+      NativeKeyPress(Action::DialogClose); // Close tutorial dialogs
+      NativeKeyPress(Action::WorldUiEscape); // Escape in in-world terminals
+      if (IsActionEnabled(Action::CancelTask)) {
+        NativeKeyPress(Action::CancelTask); // Cancel investigation
+      }
+    }
+
+    //Player Input
+    //Actions
+    if(Pressed(activeBinds["pause_menu"])){ //buttons |= X_INPUT_GAMEPAD_START
+      NativeKeyPress(Action::Start);
+    }
+    if(Pressed(activeBinds["condemned2_input_use"])){ //buttons |= X_INPUT_GAMEPAD_A;
+      NativeKeyPress(Action::MenuUse);
+    }
+    if(Pressed(activeBinds["condemned2_input_flashlight"])){ //buttons |= X_INPUT_GAMEPAD_B;
+      NativeKeyPress(Action::Flashlight);
+      NativeKeyPress(Action::MenuBAlt);
+    }
+    if(Pressed(activeBinds["condemned2_input_check"])){
+      NativeKeyPress(Action::AmmoCheck);
+    }
+    if(Pressed(activeBinds["condemned2_input_kick"])){ //buttons |= X_INPUT_GAMEPAD_RIGHT_THUMB;
+      NativeKeyPress(Action::Kick);
+    }
+    if(Pressed(activeBinds["condemned2_input_throw"])){ //buttons |= X_INPUT_GAMEPAD_RIGHT_SHOULDER;
+      NativeKeyPress(Action::Throw);
+    }
+    if(Pressed(activeBinds["condemned2_input_drop"])){ //buttons |= X_INPUT_GAMEPAD_DPAD_DOWN;
+      NativeKeyPress(Action::Holster);
+    }
+    if(Pressed(activeBinds["condemned2_input_taser"])){ //buttons |= X_INPUT_GAMEPAD_DPAD_UP
+      NativeKeyPress(Action::Taser);
+    }
+    if(Pressed(activeBinds["condemned2_input_hook_attacks"])){
+      NativeKeyPress(Action::BlockHold);
+      NativeKeyPress(Action::MenuLsClick);
+    }
+    if(Pressed(activeBinds["condemned2_input_tool_take_picture"])){
+      NativeKeyPress(Action::CameraShutter);
+    }
+    if(IsDown(activeBinds["condemned2_input_zoom"])){
+      NativeKeyPress(Action::MenuRtAlt);
+    }
+    if(Pressed(activeBinds["condemned2_input_objectives"])){ //buttons |= X_INPUT_GAMEPAD_BACK;
+      NativeKeyPress(Action::ObjectivesB);
+      NativeKeyPress(Action::ObjectivesA);
+      SetShowObjectives(true);
+    }else if(!IsDown(activeBinds["condemned2_input_objectives"]) && IsShowObjectives()){ 
+      NativeKeyPress(Action::ObjectivesB, true);
+      NativeKeyPress(Action::ObjectivesA, true);
+      SetShowObjectives(false);
+    }
+    // Forensic Tools
+    if(Pressed(activeBinds["condemned2_input_forensics"])){ // Initial forensic tool selection
+      NativeKeyPress(Action::ForensicTools);
+      NativeKeyPress(Action::InventoryPanel);
+      SetToolSelection(true);
+    }else if(!IsDown(activeBinds["condemned2_input_forensics"]) && IsSelectingTool()){ // No longer selecting a forensic tool
+      NativeKeyPress(Action::ForensicsReturn);
+      NativeKeyPress(Action::ForensicTools);
+      SetToolSelection(false);
+    }
+    // Quick-swap (Custom controls)
+    if(Pressed(activeBinds["condemned2_input_tool_uv"])){
+      NativeKeyPress(Action::InventoryPanel);
+      NativeKeyPress(Action::AltLeftStickY);
+      NativeKeyPress(Action::ToolSlotUV);
+      NativeKeyPress(Action::WorldUiLeft);
+    }
+    if(Pressed(activeBinds["condemned2_input_tool_camera"])){
+      NativeKeyPress(Action::InventoryPanel);
+      NativeKeyPress(Action::ToolSlotCamera);
+      NativeKeyPress(Action::WorldUiUp);
+      NativeKeyPress(Action::WorldUiLeft);
+    }
+    if(Pressed(activeBinds["condemned2_input_tool_spectrometer"])){
+      NativeKeyPress(Action::ForensicTools);
+      NativeKeyPress(Action::InventoryPanel);
+      NativeKeyPress(Action::ToolSlotSpectrometer);
+      NativeKeyPress(Action::WorldUiRight);
+    }
+    if(Pressed(activeBinds["condemned2_input_tool_gps"])){
+      NativeKeyPress(Action::ForensicTools);
+      NativeKeyPress(Action::InventoryPanel);
+      NativeKeyPress(Action::ToolSlotGps);
+      NativeKeyPress(Action::WorldUiDown);
+    }
+
+     //Left Stick/Movement
     double lx = 0;
     double ly = 0;
     double moveScale = 1;
     if(IsDown(activeBinds["condemned2_input_walk"])){ // Walk
       moveScale = 0.5;
-    }else{ //buttons |= X_INPUT_GAMEPAD_LEFT_SHOULDER
-      Held(activeBinds["condemned2_input_sprint"], {0x10} );
     }
-    if(IsDown(activeBinds["condemned2_input_move_forward"])) ly = moveScale;
-    if(IsDown(activeBinds["condemned2_input_move_backward"])) ly = -moveScale;
-    if(IsDown(activeBinds["condemned2_input_move_right"])) lx = moveScale;
-    if(IsDown(activeBinds["condemned2_input_move_left"])) lx = -moveScale;
+    bool sprinting = IsDown(activeBinds["condemned2_input_sprint"]) && (moveScale == 1);
+    if(sprinting){ //buttons |= X_INPUT_GAMEPAD_LEFT_SHOULDER
+      NativeKeyPress(Action::Sprint);
+    }
+    SetSprinting(sprinting);
+    if(IsDown(activeBinds["condemned2_input_move_forward"])){
+      ly = moveScale;
+    }
+    if(IsDown(activeBinds["condemned2_input_move_backward"])){
+      ly = -moveScale;
+    }
+    if(IsDown(activeBinds["condemned2_input_move_right"])){
+      lx = moveScale;
+    }  
+    if(IsDown(activeBinds["condemned2_input_move_left"])){
+      lx = -moveScale;
+    }
     move_dx = lx;
     move_dy = ly;
     
     // Mouse Button Events
     bool hasMeleeWeapon = IsUsingMeleeWeapon();
-    bool isMouseLeftPressed = Pressed(activeBinds["condemned2_input_primary_fire"]);
-    bool isMouseRightPressed = Pressed(activeBinds["condemned2_input_secondary_fire"]);
     bool isMouseLeft = IsDown(activeBinds["condemned2_input_primary_fire"]);
     bool isMouseRight = IsDown(activeBinds["condemned2_input_secondary_fire"]);
+    bool isMouseLeftPressed = Pressed(activeBinds["condemned2_input_primary_fire"]);
+    bool isMouseRightPressed = Pressed(activeBinds["condemned2_input_secondary_fire"]);
     mouse_clicks = { 
       !hasMeleeWeapon ? isMouseRight : isMouseLeft, 
       !hasMeleeWeapon ? isMouseLeft : isMouseRight, 
@@ -282,27 +486,35 @@ namespace rex::input::condemned2input {
       !hasMeleeWeapon ? isMouseRightPressed : isMouseLeftPressed, 
       !hasMeleeWeapon ? isMouseLeftPressed : isMouseRightPressed 
     };
-    if(mouse_clicks.isMouseLeftPressed){
-      NativeKeyPress(0x47);
-      NativeKeyPress(0x79);
-      NativeKeyPress(0x1c);
-    }
-    if(mouse_clicks.isMouseRightPressed){
-      NativeKeyPress(0x11);
-      NativeKeyPress(0x7a);
-      NativeKeyPress(0xbc);
-      NativeKeyPress(0x65); // Cancel investigation
-    }
-
-    //Mouse wheel events
-    float wheelY = 0;
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      switch (event.type) {
-        case SDL_EVENT_MOUSE_WHEEL:
-          wheelY += event.wheel.y;
-        break;
+    if (REXCVAR_GET(condemned2_input_log)) {
+      const bool left = IsDown(activeBinds["condemned2_input_primary_fire"]);
+      const bool right = IsDown(activeBinds["condemned2_input_secondary_fire"]);
+      if (left != logLeft_ || right != logRight_ || hasMeleeWeapon != logMelee_ || isSelectingTool != logTool_) {
+        logLeft_ = left; logRight_ = right; logMelee_ = hasMeleeWeapon; logTool_ = isSelectingTool;
+        REXLOG_INFO("[c2in] state: mouse left={} right={} | melee weapon={} | forensic wheel held={}", left, right, hasMeleeWeapon, isSelectingTool);
       }
+    }
+    if(mouse_clicks.isMouseLeftPressed){
+      NativeKeyPress(Action::FirearmTrigger);
+      NativeKeyPress(Action::ComboRight);
+      NativeKeyPress(Action::Block);
+      NativeKeyPress(Action::MenuRtAlt);
+    }
+    // Aim/focus (71) is a hold: PlayerAiming clears the aiming flag on the OFF event.
+    if(!mouse_clicks.isMouseLeft && aimHeld_){
+      NativeKeyPress(Action::FirearmTrigger, true);
+    }
+    aimHeld_ = mouse_clicks.isMouseLeft;
+    if(mouse_clicks.isMouseRightPressed){
+      NativeKeyPress(Action::Attack);
+      NativeKeyPress(Action::ComboLeft);
+      // Only when the active command set enables it; otherwise this aborts the forensic task on
+      // every attack click (the camera click above included).
+      if (IsActionEnabled(Action::CancelTask)) {
+        NativeKeyPress(Action::CancelTask);
+      }
+      NativeKeyPress(Action::NoteInputTime);
+      NativeKeyPress(Action::CameraShutter); // The forensic camera takes its photo on this action
     }
 
     // Mouse look
@@ -311,6 +523,11 @@ namespace rex::input::condemned2input {
       SDL_GetRelativeMouseState(&dx, &dy);
     }
     double sensitivity = REXCVAR_GET(condemned2_input_mouse_sensitivity);
+    {
+      std::lock_guard<std::mutex> lock(mouseAccumMutex_);
+      accum_dx_ += dx;
+      accum_dy_ += dy;
+    }
     last_dx = dx * sensitivity;
     last_dy = dy * sensitivity;
     // Additive mouse delta
@@ -318,108 +535,6 @@ namespace rex::input::condemned2input {
     last_add_dy += -last_dy * 0.01f;
     last_add_dx = std::clamp(last_add_dx, -1.0, 1.0);
     last_add_dy = std::clamp(last_add_dy, -1.0, 1.0);
-
-    // Native PC Controls
-    // UI Controls
-    // Navigation
-    Held(activeBinds["menu_nav_up"], {0x82}, wheelY == 0.0f, wheelY > 0.0f);
-    Held(activeBinds["menu_nav_down"], {0x83}, wheelY == 0.0f, wheelY < 0.0f);
-    Held(activeBinds["menu_nav_left"], {0x84} );
-    Held(activeBinds["menu_nav_right"], {0x85} );
-
-    if(Pressed(activeBinds["menu_category_left"]) ){ //buttons |= X_INPUT_GAMEPAD_LEFT_SHOULDER
-      //NativeKeyPress(0x84);
-      NativeKeyPress(0x8d);
-    }
-    if(Pressed(activeBinds["menu_category_right"]) ){ //buttons |= X_INPUT_GAMEPAD_RIGHT_SHOULDER;
-      //NativeKeyPress(0x85);
-      NativeKeyPress(0x8e);
-    }
-    // Commands
-    if(Pressed(activeBinds["menu_enter"])){ // buttons |= X_INPUT_GAMEPAD_A;
-      //Submit menu confirm
-      NativeKeyPress(0xa6);
-      NativeKeyPress(0x5b);
-      //Menu confirm
-      NativeKeyPress(0x87);
-      NativeKeyPress(0xb5);
-      //In-game menu confirm
-      NativeKeyPress(0xa7);
-      NativeKeyPress(0xb7); // Used for dialogs in fight club
-      NativeKeyPress(0xba); // Close tutorial dialogs
-      NativeKeyPress(0x5d); // Choose investigation choice
-    }
-    if(Pressed(activeBinds["menu_go_back"])){ //buttons |= X_INPUT_GAMEPAD_B;
-      NativeKeyPress(0x88);
-      NativeKeyPress(0xba); // Close tutorial dialogs
-      NativeKeyPress(0x65); // Cancel investigation
-    }
-
-    //Player Input
-    //Actions
-    if(Pressed(activeBinds["pause_menu"])){ //buttons |= X_INPUT_GAMEPAD_START
-      NativeKeyPress(0xd);
-    }
-    if(Pressed(activeBinds["condemned2_input_use"])){ //buttons |= X_INPUT_GAMEPAD_A;
-      NativeKeyPress(0x57);
-    }
-    if(Pressed(activeBinds["condemned2_input_flashlight"])){ //buttons |= X_INPUT_GAMEPAD_B;
-      NativeKeyPress(0x72);
-      NativeKeyPress(0x8c);
-    }
-    if(Pressed(activeBinds["condemned2_input_check"])){
-      NativeKeyPress(0x3d);
-    }
-    if(Pressed(activeBinds["condemned2_input_kick"])){ //buttons |= X_INPUT_GAMEPAD_RIGHT_THUMB;
-      NativeKeyPress(0x5a);
-    }
-    if(Pressed(activeBinds["condemned2_input_throw"])){ //buttons |= X_INPUT_GAMEPAD_RIGHT_SHOULDER;
-      NativeKeyPress(0x3f);
-    }
-    if(Pressed(activeBinds["condemned2_input_drop"])){ //buttons |= X_INPUT_GAMEPAD_DPAD_DOWN;
-      NativeKeyPress(0x66);
-    }
-    if(Pressed(activeBinds["condemned2_input_taser"])){ //buttons |= X_INPUT_GAMEPAD_DPAD_UP
-      NativeKeyPress(0x3e);
-    }
-    if(Pressed(activeBinds["condemned2_input_hook_attacks"])){ 
-      NativeKeyPress(0x42);
-      NativeKeyPress(0xa8);
-    }
-    Held(activeBinds["condemned2_input_objectives"], {0x4f, 0x4e} );
-    Held(activeBinds["condemned2_input_forensics"], {0x74, 0x71} );
-    if(Pressed(activeBinds["condemned2_input_tool_take_picture"])){
-      NativeKeyPress(0xb9);
-    }
-    if(IsDown(activeBinds["condemned2_input_zoom"])){
-      NativeKeyPress(0x8b);
-    }
-
-    // Quick-swap (Custom controls)
-    if(Pressed(activeBinds["condemned2_input_tool_uv"])){
-      NativeKeyPress(0x71);
-      NativeKeyPress(0x90);
-      NativeKeyPress(0x96);
-      NativeKeyPress(0xa0);
-    }
-    if(Pressed(activeBinds["condemned2_input_tool_camera"])){
-      NativeKeyPress(0x71);
-      NativeKeyPress(0x98);
-      NativeKeyPress(0x9e);
-      NativeKeyPress(0xa0);
-    }
-    if(Pressed(activeBinds["condemned2_input_tool_spectrometer"])){
-      NativeKeyPress(0x74);
-      NativeKeyPress(0x71);
-      NativeKeyPress(0x97);
-      NativeKeyPress(0xa1);
-    }
-    if(Pressed(activeBinds["condemned2_input_tool_gps"])){
-      NativeKeyPress(0x74);
-      NativeKeyPress(0x71);
-      NativeKeyPress(0x99);
-      NativeKeyPress(0x9f);
-    }
 
     //Update controller
     packet_number_++; // Increment input packet number
@@ -468,26 +583,22 @@ namespace rex::input::condemned2input {
     return edge;
   }
 
-  void Condemned2InputDriver::Held(Bind& b, std::vector<int32_t> keycodes, bool down, bool pressed) {
-    if((!IsDown(b) || down ) && b.prev){
-      for (int32_t k : keycodes) {
-        NativeKeyPress(k, true);
-      }
-    }
-    if(Pressed(b) || pressed ){
-      for (int32_t k : keycodes) {
-        NativeKeyPress(k);
-      }
-      b.prev = true;
-    } 
+  // Native key presses in Condemned 2!
+  // Asks the game whether an action is enabled by the active command sets. A gamepad only fires
+  // the actions its current command set enables, but the driver sends aliases directly, so it has
+  // to ask (otherwise e.g. CancelTask aborts a forensic task on every click).
+  bool Condemned2InputDriver::IsActionEnabled(Action action) {
+    return (IsCommandEnabled(kInputManager, static_cast<uint32_t>(action)) & 0xff) != 0;
   }
 
-  // Native key presses in Condemned 2!
   void Condemned2InputDriver::NativeKeyPress(int32_t keycode, bool release ){
+    C2_INPUT_LOG("[c2in] inject {} {} ({:#x}) enabled={}", release ? "RELEASE" : "PRESS  ", ActionName(static_cast<uint32_t>(keycode)), keycode, release ? -1 : static_cast<int>(IsActionEnabled(static_cast<Action>(keycode))));
+    injecting_ = true;
     PressBind(kInputManager, keycode);
     if(!release){
       HoldBind(kInputManager, keycode);
     }
+    injecting_ = false;
   }
 
   //Resolves rex string cvars to mouse look enum!
@@ -502,12 +613,26 @@ namespace rex::input::condemned2input {
     }
   }
   
+  // Reports when the value we force for an action changes (not every poll).
+  void LogOverrideChange(const char* kind, uint32_t id, double value) {
+    if (!REXCVAR_GET(condemned2_input_log)) return;
+    static std::unordered_map<uint64_t, double> last;
+    const uint64_t key = (static_cast<uint64_t>(kind[0] == 'a') << 32) | id;
+    auto it = last.find(key);
+    const double prev = it == last.end() ? 0.0 : it->second;
+    if (prev == value) return;
+    last[key] = value;
+    REXLOG_INFO("[c2in] override {:<6} {} ({:#x}) {} -> {}", kind, ActionName(id), id, prev, value);
+  }
+
   double GetAxisOverrideValue(uint32_t btn){
+    const Action action = static_cast<Action>(btn);
+
     //Left Stick Handling / Movement Velocity
     std::pair<double,double> moveVel = g_condemned2_input_driver->MoveVel();
-    if (btn == 0x2 && moveVel.second != 0){
+    if (action == Action::MoveAxisY && moveVel.second != 0){
       return moveVel.second;
-    }else if (btn == 0x5 && moveVel.first != 0){
+    }else if (action == Action::StrafeAxisX && moveVel.first != 0){
       return moveVel.first;
     }
 
@@ -520,28 +645,32 @@ namespace rex::input::condemned2input {
     // Mouse Button Handling
     MouseBind mouseClick = g_condemned2_input_driver->MouseClick();
     if(mouseClick.isMouseMiddle && g_condemned2_input_driver->IsUsingMeleeWeapon()){ //Alt block
-      if (btn == 0x79 || btn == 0x65 || btn == 0x47 || btn == 0x7a){
+      if (action == Action::ComboRight || action == Action::CancelTask || action == Action::FirearmTrigger || action == Action::ComboLeft){
         return 1.0;
       }
     }
-    else if (btn == 0x79 || btn == 0x47){ // Left click
+    else if (action == Action::ComboRight){
       return mouseClick.isMouseLeft;
-    }else if (btn == 0x7a || btn == 0x65){ // Right click
+    }else if (action == Action::CancelTask){
       return mouseClick.isMouseRight;
+    }else if (action == Action::FirearmTrigger){
+      return mouseClick.isMouseLeft;
+    }else if (action == Action::ComboLeft){ // Block
+      return ( ( mouseClick.isMouseLeft && mouseClick.isMouseRight ) ? 1.0 : 0.0);
     }
 
     // Radio/TV Antenna Tuning
     // This uses a soft additive mouse input so users can feel slight weight in adjusting antennas.
     if( g_condemned2_input_driver->IsUsingTuningControls() ){
       std::pair<double,double> accumMouse = g_condemned2_input_driver->AccumMouse();
-      if (btn == 0x7B) {
+      if (action == Action::TuneAxisX) {
         return accumMouse.first;
       }
-      if (btn == 0x7C) {
+      if (action == Action::TuneAxisY) {
         return accumMouse.second;
       }
     }
-    if ( btn == 0x7B || btn == 0x7C ){
+    if ( action == Action::TuneAxisX || action == Action::TuneAxisY ){
       return 0;
     }
 
@@ -549,23 +678,33 @@ namespace rex::input::condemned2input {
     // Overriding right stick input with raw mouse input
     std::pair<double,double> rawMouse = g_condemned2_input_driver->RawMouse();
     if (g_condemned2_input_driver->GetMouseLookType() == MouseLookType::NATIVE){ // Restored dev/unused mouse look function in Condemned 2 ( which introduces its own smoothing and sensitivity )
-      if ( btn == 0x17 || btn == 0x16 ){
+      if ( action == Action::LookAxisX || action == Action::LookAxisY ){
         return 0;
       }
-      if (btn == 0xC ) {
-        return rawMouse.first;
+      // The native routine applies counts * MouseSensitivity * MouseAimDampen (0.8) straight to the camera with no
+      // frame-time scaling, in radians. Convert degrees/count to that, so the setting is framerate independent.
+      constexpr double kDegToRad = 3.14159265358979323846 / 180.0;
+      constexpr double kMouseAimDampen = 0.8;
+      const double scale = REXCVAR_GET(condemned2_input_mouse_native_sensitivity) * kDegToRad / kMouseAimDampen;
+      // The camera update reads X then Y exactly once per frame, so X marks the start of a frame.
+      if (action == Action::MouseLookX) {
+        g_condemned2_input_driver->BeginMouseLookFrame();
       }
-      if (btn == 0xB ) {
-        return rawMouse.second;
+      std::pair<double,double> frameMouse = g_condemned2_input_driver->FrameMouse();
+      if (action == Action::MouseLookX) {
+        return frameMouse.first * scale;
+      }
+      if (action == Action::MouseLookY) {
+        return frameMouse.second * scale;
       }
     }else if (g_condemned2_input_driver->GetMouseLookType() == MouseLookType::MIXED){ // Overrides gamepad input to use raw mouse input, retaining more subtle behaviors from the gamepad input.
-      if ( btn == 0xC || btn == 0xB ){
+      if ( action == Action::MouseLookX || action == Action::MouseLookY ){
         return 0;
       }
-      if (btn == 0x17 ) {
+      if (action == Action::LookAxisX) {
         return rawMouse.first;
       }
-      if (btn == 0x16 ) {
+      if (action == Action::LookAxisY) {
         return rawMouse.second;
       }
     }
@@ -573,33 +712,34 @@ namespace rex::input::condemned2input {
   }
 
   double GetButtonOverrideValue(uint32_t btn){
+    const Action action = static_cast<Action>(btn);
     if (g_condemned2_input_driver->GetMouseLookType() == MouseLookType::DISABLED  // No changes if disabled.
     || !g_condemned2_input_driver->IsUsingPCControls() ) // Are using the gamepad?
       return 0;
 
     //Sprint
-    if( btn == 0x10 && g_condemned2_input_driver->GetActiveBinds()["condemned2_input_sprint"].prev){
+    if( action == Action::Sprint && g_condemned2_input_driver->IsSprinting()){
       return 1;
     }
 
     //Is selecting forensic tool
-    if( btn == 0x74 && g_condemned2_input_driver->GetActiveBinds()["condemned2_input_forensics"].prev){
+    if( action == Action::ForensicTools && g_condemned2_input_driver->IsSelectingTool()){
       return 1;
     }
 
     //Firearms
     MouseBind mouseClick = g_condemned2_input_driver->MouseClick();
-    if (btn == 0x11 || btn == 0x65 ) {
+    if (action == Action::Attack || action == Action::CancelTask) {
       return mouseClick.isMouseRight || mouseClick.isMouseRightPressed;
-    }else if(btn == 0x1c){ 
+    }else if(action == Action::Block){
       return mouseClick.isMouseLeft || mouseClick.isMouseLeftPressed;
     }
 
     //Melee Combos
     if( g_condemned2_input_driver->IsUsingMeleeWeapon()){
-      if (btn == 0x7a ) {
+      if (action == Action::ComboLeft) {
         return mouseClick.isMouseRightPressed;
-      }else if(btn == 0x79){ 
+      }else if(action == Action::ComboRight){
         return mouseClick.isMouseLeftPressed;
       }
     }
@@ -614,21 +754,29 @@ namespace rex::input::condemned2input {
     if( newValue != 0 ){
       ctx.f1.f64 = newValue;
     }
+    LogOverrideChange("axis", newID, newValue);
     //if ( ctx.f1.f64 != 0 ){
     //  REXLOG_INFO("[condemned2_input][Input_GetAxis] {:#x} {:#x} {}", newID, ctx.r4.u32, ctx.f1.f64);
     //}
   }
   REX_HOOK_RAW(Input_KeyDown){
-    REXLOG_INFO("[condemned2_input][Input_KeyDown] {:#x} {:#x}", ctx.r3.u32, ctx.r4.u64);
     __imp__Input_KeyDown(ctx, base);
   }
+  // The hooks below only report calls made while the driver is injecting an action, so the log
+  // shows what the game did with each injected action instead of every poll it makes.
   REX_HOOK_RAW(Input_KeyHold){
-    //REXLOG_INFO("[condemned2_input][Input_KeyHold] {:#x} {:#x}", ctx.r3.u32, ctx.r4.u64);
+    const uint32_t id = ctx.r4.u32;
     __imp__Input_KeyHold(ctx, base);
+    if (g_condemned2_input_driver && g_condemned2_input_driver->IsInjecting()) {
+      C2_INPUT_LOG("[c2in]   game KeyHold   {} ({:#x}) -> {}", ActionName(id), id, ctx.r3.u32 & 0xff);
+    }
   }
   REX_HOOK_RAW(Input_KeyUp){
-    REXLOG_INFO("[condemned2_input][Input_KeyUp] {:#x} {:#x}", ctx.r3.u32, ctx.r4.u64);
+    const uint32_t id = ctx.r4.u32;
     __imp__Input_KeyUp(ctx, base);
+    if (g_condemned2_input_driver && g_condemned2_input_driver->IsInjecting()) {
+      C2_INPUT_LOG("[c2in]   game KeyUp     {} ({:#x}) -> {}", ActionName(id), id, ctx.r3.u32 & 0xff);
+    }
   }
   REX_HOOK_RAW(Input_GetButton){
     //uint32_t temp = ctx.r3.u32;
@@ -638,11 +786,15 @@ namespace rex::input::condemned2input {
     if(newValue != 0){
       ctx.r3.u64 = newValue;
     }
+    LogOverrideChange("button", tempB, newValue);
     //REXLOG_INFO("[condemned2_input][Input_GetButton] {:#x} {:#x} {}", temp, tempB, ctx.r3.u64);
   }
   REX_HOOK_RAW(Input_PlayerInput){
-    REXLOG_INFO("[condemned2_input][Input_PlayerInput] {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32);
+    const uint32_t id = ctx.r4.u32;
     __imp__Input_PlayerInput(ctx, base);
+    if (g_condemned2_input_driver && g_condemned2_input_driver->IsInjecting()) {
+      C2_INPUT_LOG("[c2in]     player handled {} ({:#x}) -> {}", ActionName(id), id, ctx.r3.u32 & 0xff);
+    }
   }
   
   // Handles on attack landed events!

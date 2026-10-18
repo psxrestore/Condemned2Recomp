@@ -7,10 +7,13 @@
 #include <rex/ui/window.h>
 #include <rex/ui/window_listener.h>
 
+#include <atomic>
 #include <cstdint>
 #include <mutex>
 #include <queue>
 #include <string>
+
+#include <condemned2_actions.h>
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -53,6 +56,8 @@ namespace rex::input::condemned2input{
          X_RESULT SetDeviceVibration(DeviceId id, X_INPUT_VIBRATION* vibration) override;
          X_RESULT GetDeviceKeystroke(DeviceId id, uint32_t flags, X_INPUT_KEYSTROKE* out_keystroke) override;
          void OnWindowAvailable(rex::ui::Window* window) override;
+         void OnMouseWheel(rex::ui::MouseEvent& e) override;
+         void OnClosing(rex::ui::UIEvent& e) override;
 
          bool IsAnyDialogOpen();
          std::unordered_map<std::string, ImGuiWindow*> GetActiveWindows() { return activeWindows; }
@@ -60,14 +65,22 @@ namespace rex::input::condemned2input{
          Bind ParseBind(const std::string& s);
          bool IsDown(const Bind &b);
          bool Pressed(Bind& b);
-         void Held(Bind& b, std::vector<int32_t> keycodes, bool down = false, bool pressed = false);
          void NativeKeyPress(int32_t keycode, bool release = false);
+         bool IsActionEnabled(condemned2::Action action);
+         void NativeKeyPress(condemned2::Action action, bool release = false) { NativeKeyPress(static_cast<int32_t>(action), release); }
          std::unordered_map<std::string, Bind> GetActiveBinds() { return activeBinds; }
 
          void SetMouseLookType( MouseLookType mouseMode ) { mouseLookType = mouseMode; }
          void SetMouseLookTypeFromString( std::string mouseMode );
          MouseLookType GetMouseLookType() { return mouseLookType; }
          std::pair<double, double> RawMouse() { return {last_dx, last_dy}; }
+         // Moves the counts gathered since the last camera update into the per-frame value (game thread)
+         void BeginMouseLookFrame() {
+            std::lock_guard<std::mutex> lock(mouseAccumMutex_);
+            frame_dx_ = accum_dx_; frame_dy_ = accum_dy_;
+            accum_dx_ = accum_dy_ = 0;
+         }
+         std::pair<double, double> FrameMouse() { return {frame_dx_, frame_dy_}; }
          std::pair<double, double> AccumMouse() { return {last_add_dx, last_add_dy}; }
          std::pair<double, double> MoveVel() { return {move_dx, move_dy}; }
          MouseBind MouseClick() { return mouse_clicks; }
@@ -78,11 +91,18 @@ namespace rex::input::condemned2input{
          void SetMeleeControls( bool enabled ) { hasMeleeWeapon = enabled; }
          void SetMenuMode( bool enabled ) { isInMenu = enabled; }
          void SetPCControls( bool enabled ) { isUsingPCControls = enabled; }
+         void SetSprinting( bool enabled ) { isSprinting = enabled; }
+         void SetToolSelection( bool enabled ) { isSelectingTool = enabled; }
+         void SetShowObjectives( bool enabled ) { showingObjectives = enabled; }
 
          bool IsUsingTuningControls() { return isTuning; }
          bool IsUsingMeleeWeapon() { return hasMeleeWeapon; }
          bool IsInMenu() { return isInMenu; }
          bool IsUsingPCControls() { return isUsingPCControls; }
+         bool IsSprinting() { return isSprinting;}
+         bool IsSelectingTool() { return isSelectingTool;}
+         bool IsShowObjectives() { return showingObjectives;}
+         bool IsInjecting() const { return injecting_; }
 
       private:
          uint32_t packet_number_ = 0;
@@ -97,6 +117,17 @@ namespace rex::input::condemned2input{
             "##launcherBg",
          };
 
+         //Logging
+         bool injecting_ = false;
+         bool useHeld_ = false;
+         bool aimHeld_ = false;
+         bool logLeft_ = false, logRight_ = false, logMelee_ = false, logTool_ = false;
+
+         //Mouse wheel (UI thread accumulates, game thread consumes)
+         std::atomic<int> wheelTicks_{0};
+         condemned2::Action wheelHeld_ = static_cast<condemned2::Action>(0);
+         bool wheelHeldActive_ = false;
+
          //Raw mouse input
          MouseLookType mouseLookType;
          bool isDialogOpen = true;
@@ -107,10 +138,17 @@ namespace rex::input::condemned2input{
          double last_dy;
          double last_add_dx;
          double last_add_dy;
+         //Native mouse look: raw counts accumulate from every poll, then the game consumes them once per camera update
+         std::mutex mouseAccumMutex_;
+         double accum_dx_ = 0, accum_dy_ = 0;
+         double frame_dx_ = 0, frame_dy_ = 0;
 
          //Custom input
          bool blockFirstFrame = false;
          bool hasMeleeWeapon = false;
+         bool isSprinting = false;
+         bool isSelectingTool = false;
+         bool showingObjectives = false;
          double move_dx;
          double move_dy;
          MouseBind mouse_clicks;

@@ -50,6 +50,7 @@
 0x824262C8 = {name="Player_UserSettings"}
 0x823C76A8 = {name="Player_ApplySettings"} 
 0x82221E40 = {name="ParseSWF"}
+0x824149D8 = {name="HudSpectatorModeChange"} # CActionScriptPlayer::OnSpectatorModeChange(player, params): forwards the spectator mode to the HUD movie (issue #38)
 
 # Level of Detail
 0x8212A400 = {name="ApplyDisplaySettings"}
@@ -76,6 +77,7 @@
 0x8234BEC0 = {name="Input_KeyUp"}
 0x8234BF28 = {name="Input_KeyHold"}
 0x82315438 = {name="Input_PlayerInput"}
+0x8234C388 = {name="Input_IsCommandEnabled"} # (input, actionId): true if the action is enabled by the active command sets (EnableCommands / DisableCommands)
 0x82874E28 = {name="Input_OnAttackLanded"}
 0x82425158 = {name="AimingSensitivity"} # Aiming sensitivity setting
 0x8230A428 = {name="ProcessLookInput"}
@@ -83,9 +85,6 @@
 
 #Unlockables and Cheats
 0x823077E0 = {name="Unlockables_Levels"}
-0x823079C8 = {name="Unlockables_Upgrades"}
-0x823DE5D8 = {name="GunAccuracyMultiplier"}
-0x826C0290 = {name="RandomAccuracyKnockoff"}
 
 # Gameplay
 0x823D56C0 = {name="TvAntennaAdjust"} # Used to toggle additive mouse input
@@ -93,9 +92,21 @@
 0x824384F0 = {name="BodyCapFunction"} # Body capsule physics
 0x826A5508 = {name="OnAttackEffect"} # Seems to be involved in whether there's gore or just a decal.
 0x82325C08 = {name="Game_BundleLoad"} # Loads a specific bndl!
-0x821AE858 = {name="Game_LoadExtResource"}
 0x8217FB08 = {name="ResourceLoader"} # Loads resources, such as mdl!!!
 0x821F7E98 = {name="LoadModelFile"} # Loads resources, such as mdl!!!
 
 # Misc
 0x82561760 = {name="Math_ApplyLinearCurve"} # This has various applications, such as input sensitivity and various sfx settings.
+
+# Cheats
+0x8249ECF8 = {name="CanHolsterWeapon"} # CanHolsterWeapon(player, weapon, input): true if the weapon is stowed in the holster instead of dropped
+0x821B1120 = {name="ParseBundle"} # ParseBundle(resource, stream): reads a .bndl and registers every resource in it
+0x821AE858 = {name="FindResourceHandler"} # FindResourceHandler(manager, resourceName, &handler): false makes ParseBundle skip that resource
+0x823079C8 = {name="GetControlInput"} # GetControlInput(input, "ControlName"): value of a named control, 0 while the player has not unlocked it yet (e.g. "Holster")
+0x823B0BF8 = {name="GetZoomShake"} # GetZoomShake(weapon, mode, float* out): scope sway from the weapon's "ZoomShake" record, false when it has none
+0x82340BF8 = {name="UpdateCameraSway"} # UpdateCameraSway(camera): sine wave camera offset from the CameraSway* config values
+0x825407F8 = {name="FireWeapon"} # FireWeapon(weapon, fireInfo): server side shot, fireInfo+0 is the owner object, +56 the spread scale the client sent
+0x823B8298 = {name="PlayerFireShot"} # PlayerFireShot(clientWeapon): client side shot, rolls the spread, then sends direction + spread scale to the server
+0x826C0290 = {name="ApplyVectorSpread"} # ApplyVectorSpread(perturb, flag): random cone offset of a bullet vector from the weapon's "Perturb" record, skipped when perturb+24 (weapon) is 0
+0x826BFF48 = {name="ApplyProjectileSpread"} # ApplyProjectileSpread(perturb, dir, flag): same for projectiles, skipped when perturb+24 (weapon) is 0
+0x823DE5D8 = {name="GetStanceAccuracy"} # GetStanceAccuracy(PlayerAccuracy): per-stance spread from the weapon's "Accuracy" record, drives crosshair size and the spread scale
