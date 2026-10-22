@@ -12,6 +12,7 @@
 #include <rex/runtime.h>
 #include <rex/memory/utils.h>
 #include <rex/system/xmemory.h>
+#include <rex/ppc/function.h>
 
 #include <iostream>
 #include <string>
@@ -38,7 +39,7 @@ REX_IMPORT(GetBoolCvar, SendConsoleBool, int(u32, int));
 REX_IMPORT(CCommandMgr_Process, ProcessCmd, bool(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t));
 
 namespace Condemned2 {
-    namespace {constexpr uint32_t guestCapacity = 4096; constexpr uint32_t kCCommandMgr = 0x8294F74C;}
+    namespace {constexpr uint32_t scratchCapacity = 0x1000; constexpr uint32_t persistentCapacity = 0x10000; constexpr uint32_t kCCommandMgr = 0x8294F74C;}
 
     Condemned2Hook* g_condemned2_hooks = nullptr;
     Condemned2Hook::Condemned2Hook() {
@@ -56,7 +57,8 @@ namespace Condemned2 {
             return;
 
         _runtime = runtime;
-        guestAddress = _memory->SystemHeapAlloc(guestCapacity);
+        scratchAddress = _memory->SystemHeapAlloc(scratchCapacity);
+        persistentAddress = _memory->SystemHeapAlloc(persistentCapacity);
     }
 
     void Condemned2Hook::InitializeCallbacks(){
@@ -218,6 +220,64 @@ namespace Condemned2 {
         }
     }
 
+    //Call Indirect
+    uint32_t Condemned2Hook::CallIndirectFunction(PPCContext& parent, uint8_t* base, uint32_t address, uint32_t r3, uint32_t r4, uint32_t r5, uint32_t r6, uint32_t r7, uint32_t r8 ) {
+        PPCFunc* function = rex::runtime::ResolveIndirectFunction(address);
+        if (function == nullptr) {
+            REXLOG_ERROR("[condemned2_hooks::CallIndirectFunction] Unable to resolve guest function {:#x}",address);
+            return 0;
+        }
+        PPCContext local = parent;
+        local.r1.u32 = parent.r1.u32 - 0x1000;
+        local.r3.u64 = r3;
+        local.r4.u64 = r4;
+        local.r5.u64 = r5;
+        local.r6.u64 = r6;
+        local.r7.u64 = r7;
+        local.r8.u64 = r8;
+        function(local, base);
+        return local.r3.u32;
+    }
+
+    //String Allocation
+    uint32_t Condemned2Hook::AllocateHeapForString(const char* str) {
+        if (!str)
+            return 0;
+
+        const size_t length = std::strlen(str) + 1;
+        if (length > scratchCapacity - scratchOffset)
+            return 0;
+
+        const uint32_t address = scratchAddress + static_cast<uint32_t>(scratchOffset);
+        char* hostBuffer = _memory->TranslateVirtual<char*>(address);
+        if (!hostBuffer)
+            return 0;
+
+        std::memcpy(hostBuffer, str, length);
+        scratchOffset += length;
+
+        return address;
+    }
+
+    uint32_t Condemned2Hook::AllocatePersistentString(const char* str) {
+        if (!str)
+            return 0;
+
+        const size_t length = std::strlen(str) + 1;
+        if (length > scratchCapacity - persistentOffset)
+            return 0;
+
+        const uint32_t address = persistentAddress + static_cast<uint32_t>(persistentOffset);
+        char* hostBuffer = _memory->TranslateVirtual<char*>(address);
+        if (!hostBuffer)
+            return 0;
+
+        std::memcpy(hostBuffer, str, length);
+        persistentOffset += length;
+
+        return address;
+    }
+
     //Console Commands
     uint32_t Condemned2Hook::SendCommandCmd(const char* command, HookValue newValue){
         return SendCommandCmd(AllocateHeapForString(command), newValue);
@@ -235,7 +295,6 @@ namespace Condemned2 {
     }
 
     void Condemned2Hook::SendCommandCmd(CCommand newCmd){
-
         //Retrieve CCommandMgr pointer
         uint8_t* physicalAddress = _memory->TranslateVirtual<uint8_t*>(kCCommandMgr);
         if(!physicalAddress)
@@ -248,27 +307,7 @@ namespace Condemned2 {
         pendingCommands[newCmd.cmd].mgr = rex::memory::load_and_swap<uint32_t>(physicalAddress);
     }
 
-    //Allocation
-    uint32_t Condemned2Hook::AllocateHeapForString(const char* str) {
-        if (!str)
-            return 0;
-
-        const size_t length = std::strlen(str) + 1;
-        if (length > guestCapacity - scratchOffset)
-            return 0;
-
-        const uint32_t address = guestAddress + static_cast<uint32_t>(scratchOffset);
-        char* hostBuffer = _memory->TranslateVirtual<char*>(address);
-
-        if (!hostBuffer)
-            return 0;
-
-        std::memcpy(hostBuffer, str, length);
-        scratchOffset += length;
-
-        return address;
-    }
-
+    //Pending commands
     REX_HOOK_RAW(UpdateFrame){
         rex::CallFrame frame{ctx};
         auto& pendingCmds = g_condemned2_hooks->GetPendingConsoleCommands();
@@ -322,4 +361,3 @@ namespace Condemned2 {
         __imp__SetIntCvar(ctx, base);
     }*/
 }
-

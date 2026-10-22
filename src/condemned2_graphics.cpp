@@ -41,6 +41,7 @@
 });*/
 REXCVAR_DEFINE_BOOL(condemned2_vsync, false, "Condemned 2/Graphics", "Toggles internal Vsync, separate from Xenos Vsync").lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
 REXCVAR_DEFINE_DOUBLE(condemned2_fov, 1.0, "Condemned 2/Graphics", "Scales the camera's FOV");
+REXCVAR_DEFINE_DOUBLE(condemned2_aspect_ratio, 1.777777777777778, "Condemned 2/Graphics", "Set aspect ratio!");
 REXCVAR_DEFINE_BOOL(condemned2_screen_effects, true, "Condemned 2/Graphics", "Toggles screen effects, such as film grain and bloom.");
 REXCVAR_DEFINE_STRING(condemned2_shadow_quality, "High","Condemned 2/Graphics", "Enhances shadows by allowing more objects to cast shadows!").allowed({"Native", "Low", "Medium", "High"});
 

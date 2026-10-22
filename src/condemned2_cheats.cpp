@@ -76,9 +76,9 @@ namespace Condemned2 {
 
         // FPS Mode ( Unlimited Ammo + Starting Firearm )
         rex::cvar::RegisterChangeCallback("condemned2_cheat_fps_mode", [&](std::string_view name, std::string_view new_value) {
-             _hook->SendCommandCmd("FPSMode",  std::stod( Condemned2::Condemned2Hook::GetSafeString( new_value ) ) ); 
+             _hook->SendCommandCmd("FPSMode", std::stod( Condemned2::Condemned2Hook::GetSafeString( new_value ) ) ); 
         });
-        _hook->SendCommandCmd("FPSMode",  std::stod( Condemned2::Condemned2Hook::GetSafeString( rex::cvar::GetFlagByName("condemned2_cheat_fps_mode") ) ) ); 
+        _hook->SendCommandCmd("FPSMode", std::stod( Condemned2::Condemned2Hook::GetSafeString( rex::cvar::GetFlagByName("condemned2_cheat_fps_mode") ) ) ); 
 
         // Skip Intro Movies
         /*rex::cvar::RegisterChangeCallback("condemned2_qol_skip_intro_movies", [&](std::string_view name, std::string_view new_value) {
@@ -88,9 +88,9 @@ namespace Condemned2 {
     
         // Skip In-Game Movies
         rex::cvar::RegisterChangeCallback("condemned2_qol_skip_ingame_movies", [&](std::string_view name, std::string_view new_value) {
-            _hook->SendCommandCmd("SkipIngameMovies",  std::stod( Condemned2::Condemned2Hook::GetSafeString( new_value ) ) ); //SkipIngameMovies
+            _hook->SendCommandCmd("SkipIngameMovies", std::stod( Condemned2::Condemned2Hook::GetSafeString( new_value ) ) ); //SkipIngameMovies
         });
-        _hook->SendCommandCmd("SkipIngameMovies",  std::stod( Condemned2::Condemned2Hook::GetSafeString( rex::cvar::GetFlagByName("condemned2_qol_skip_ingame_movies") ) ) ); 
+        _hook->SendCommandCmd("SkipIngameMovies", std::stod( Condemned2::Condemned2Hook::GetSafeString( rex::cvar::GetFlagByName("condemned2_qol_skip_ingame_movies") ) ) ); 
 
         //Weapon Spawner
         rex::cvar::RegisterChangeCallback("condemned2_weapon_spawner", [&](std::string_view name, std::string_view new_value) {
