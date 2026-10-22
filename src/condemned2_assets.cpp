@@ -43,12 +43,12 @@ REXCVAR_DEFINE_BOOL(condemned2_loaded_assets_debug, true, "Condemned 2/Debug", "
 namespace Condemned2 {
     namespace{
         constexpr uint32_t kEnginePtr = 0x82932814;
-        constexpr uint32_t kReleaseResource = 0x821B1010;
         constexpr uint32_t kGetManagerOffset = 0x14;
         constexpr uint32_t kLoadBundleOffset = 0x68;
         const std::vector<std::string> bundlePaths = {
-            R"(Worlds\FC\fc_practice_0000.bndl)", // Half of the weapons
-            R"(Worlds\SP\Mission_06\M06_0000.bndl)", // Other half of exotic weaponry
+            //These contain majority of the weapons in-game
+            R"(Worlds\SP\Mission_06\M06_0000.bndl)",
+            R"(Worlds\SP\Mission_08\M08_0000.bndl)",
         };
     }
     Condemned2Assets* g_condemned2_assets = nullptr;
@@ -113,7 +113,6 @@ namespace Condemned2 {
             return false;
         }
         REXLOG_INFO("[Condemned2Assets] Load {} -> handle {:#x}",bundlePath,handle);
-        AddLoadedResource(bundlePath);
         AddLoadedBundle(bundlePath, handle);
         return true;
     }
@@ -171,7 +170,6 @@ namespace Condemned2 {
             }else{
                 g_condemned2_assets->SetCanLoadBundle(false);
             }
-            g_condemned2_assets->AddLoadedResource(p);
         }
         __imp__Game_ReadAsset(ctx, base);
     }
