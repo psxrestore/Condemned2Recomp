@@ -61,13 +61,31 @@
 0x826A5508 = {name="OnAttackEffect"} # Seems to be involved in whether there's gore or just a decal.
 
 # Bundles
-0x821B4648 = {name="Game_ReadAsset"}
+0x82326D10 = {name="Game_InitBundles"}
 0x82325C08 = {name="Game_LoadStartingBundle"} # Loads a specific bndl!
-0x821B1120 = {name="Game_ProcessBundle"}
+0x82156C88 = {name="Game_AddAssetToQueue"}
+0x821C09F0 = {name="Game_StartReadingAssets"}
+0x821AF4B0 = {name="Game_IterateAssetList"}
+0x821B4648 = {name="Game_ReadAsset"}
 0x821AE858 = {name="Game_LoadExtResource"}
+0x821B1120 = {name="Game_ProcessBundle"}
 0x8217FB08 = {name="ResourceLoader"}
 0x821F7D78 = {name="Game_InitWorldModel"} 
 0x821F7E98 = {name="Game_InitWorldObject"} 
 
 # Misc
 0x82561760 = {name="Math_ApplyLinearCurve"} # This has various applications, such as input sensitivity and various sfx settings.
+
+[[switch_tables]]
+# Fixes spectator switch case failing to reach default
+address = 0x82414a38
+register = 5 # r11 subtracts r5 by one. So, let's ignore it, use the original value. 
+labels = [
+    0x82414bd8, # 0 - Go to default
+    0x82414a50, # 1
+    0x82414a88, # 2
+    0x82414ac0, # 3
+    0x82414af8, # 4
+    0x82414b30, # 5
+    0x82414bd8  # 6 - Go to default
+]
