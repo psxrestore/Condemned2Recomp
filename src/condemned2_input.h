@@ -61,7 +61,7 @@ namespace rex::input::condemned2input{
          bool IsDown(const Bind &b);
          bool Pressed(Bind& b);
          void Held(Bind& b, std::vector<int32_t> keycodes, bool down = false, bool pressed = false);
-         void NativeKeyPress(int32_t keycode, bool release = false);
+         void NativeKeyPress(std::vector<int32_t> keycodes, bool release = false);
          std::unordered_map<std::string, Bind> GetActiveBinds() { return activeBinds; }
 
          void SetMouseLookType( MouseLookType mouseMode ) { mouseLookType = mouseMode; }
@@ -83,7 +83,8 @@ namespace rex::input::condemned2input{
          bool IsUsingMeleeWeapon() { return hasMeleeWeapon; }
          bool IsInMenu() { return isInMenu; }
          bool IsUsingPCControls() { return isUsingPCControls; }
-
+         bool IsDebugging() { return isDebugging; }
+         bool IsDebuggingFrames() { return isDebuggingFrames; } 
       private:
          uint32_t packet_number_ = 0;
 
@@ -103,6 +104,8 @@ namespace rex::input::condemned2input{
          bool isInMenu = false;
          bool isTuning; //Hey, wanna listen to some tunes?
          bool isUsingPCControls = true;
+         bool isDebugging = false;
+         bool isDebuggingFrames = false;
          double last_dx;
          double last_dy;
          double last_add_dx;
