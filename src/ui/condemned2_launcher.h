@@ -41,15 +41,15 @@ REXCVAR_DEFINE_STRING(condemned2_tu_patch_hash, "1ce63d845307c18873b737c4cb6d0ed
 REXCVAR_DEFINE_STRING(condemned2_quickbms_filename, "quickbms.zip", "Condemned 2", "QuickBMS Filename").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 //QuickBMS for Windows and Linux
 #if REX_PLATFORM_WIN32
-REXCVAR_DEFINE_STRING(condemned2_quickbms_url, "https://github.com/LittleBigBug/QuickBMS/releases/download/0.12.0/quickbms_win.zip", "Condemned 2", "QuickBMS Download").lifecycle(rex::cvar::Lifecycle::kInitOnly);
+REXCVAR_DEFINE_STRING(condemned2_quickbms_url, "https://github.com/psxrestore/QuickBMS-For-Recomps/releases/download/0.12.0/quickbms_win.zip", "Condemned 2", "QuickBMS Download").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 REXCVAR_DEFINE_STRING(condemned2_quickbms_hash, "b9d4f9efb55692994cd42a491cfea11f86e3375a618b9bd771583ce40ddb3828", "Condemned 2", "QuickBMS Hash").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 #elif REX_PLATFORM_LINUX
-REXCVAR_DEFINE_STRING(condemned2_quickbms_url, "https://github.com/LittleBigBug/QuickBMS/releases/download/0.12.0/quickbms_linux.zip", "Condemned 2", "QuickBMS Download").lifecycle(rex::cvar::Lifecycle::kInitOnly);
+REXCVAR_DEFINE_STRING(condemned2_quickbms_url, "https://github.com/psxrestore/QuickBMS-For-Recomps/releases/download/0.12.0/quickbms_linux.zip", "Condemned 2", "QuickBMS Download").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 REXCVAR_DEFINE_STRING(condemned2_quickbms_hash, "b702019930ba44e2a0e124338ec737ceaf9b83a1ab747affd3fb19ef3b6aea88", "Condemned 2", "QuickBMS Hash").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 #endif
 
 REXCVAR_DEFINE_STRING(condemned2_quickbms_script_filename, "condemned2.bms", "Condemned 2", "QuickBMS Filename").lifecycle(rex::cvar::Lifecycle::kInitOnly);
-REXCVAR_DEFINE_STRING(condemned2_quickbms_script_url, "https://aluigi.altervista.org/bms/condemned2.bms", "Condemned 2", "QuickBMS Script Download").lifecycle(rex::cvar::Lifecycle::kInitOnly);
+REXCVAR_DEFINE_STRING(condemned2_quickbms_script_url, "https://github.com/psxrestore/QuickBMS-For-Recomps/releases/download/0.12.0/condemned2.bms", "Condemned 2", "QuickBMS Script Download").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 REXCVAR_DEFINE_STRING(condemned2_quickbms_script_hash, "0acc7be36f094fe06285b05a04e8f6af78538e975309feb2b0393efc1df33a64", "Condemned 2", "QuickBMS Script Hash").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 
 namespace Condemned2 {
@@ -118,7 +118,7 @@ namespace Condemned2 {
         //Intro Dialog
         LauncherDialog Intro;
         Intro.nextState = LauncherState::IsoSelect;
-        Intro.body = "To run Condemned 2: Bloodshot, a legal copy of the game ISO is required for extraction as well as the latest Title Update.\n\nYou must have at least 8gb of free disk space to continue.";
+        Intro.body = "To run Condemned 2: Bloodshot, a legal copy of the game ISO is required for extraction as well as the latest Title Update.\n\nYou must have at least 11gb of free disk space to continue.";
         Intro.nextBtnLabel = "Begin";
         Intro.windowSize = ImVec2(640, 160);
         stateTable[LauncherState::Intro] = Intro;
