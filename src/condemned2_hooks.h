@@ -72,6 +72,9 @@ namespace Condemned2 {
             std::unordered_map<uint32_t, CCommand>& GetPendingCommands() { return pendingCommands; }
             void RemovePendingCommand(uint32_t cmd) { pendingCommands.erase(cmd); }
 
+            // Memory helpers
+            uint32_t CallIndirectFunction(PPCContext& parent, uint8_t* base, uint32_t address, uint32_t r3 = 0, uint32_t r4 = 0, uint32_t r5 = 0, uint32_t r6 = 0, uint32_t r7 = 0, uint32_t r8 = 0 );
+            uint32_t get_pointer_from_pointer(uint32_t physicalAddress);
             static void set_pointer(uint8_t* physicalAddress, uint32_t newValue) {
                 rex::memory::store_and_swap<int>(physicalAddress, static_cast<uint32_t>(newValue));
             };
@@ -96,8 +99,7 @@ namespace Condemned2 {
             static int get_int(uint8_t* physicalAddress) {
                 return rex::memory::load_and_swap<int>(physicalAddress);
             };
-            uint32_t CallIndirectFunction(PPCContext& parent, uint8_t* base, uint32_t address, uint32_t r3 = 0, uint32_t r4 = 0, uint32_t r5 = 0, uint32_t r6 = 0, uint32_t r7 = 0, uint32_t r8 = 0 );
-
+  
         private:
             rex::Runtime* _runtime;
             rex::memory::Memory* _memory;

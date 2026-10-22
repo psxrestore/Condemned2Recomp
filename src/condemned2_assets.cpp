@@ -43,6 +43,7 @@ REXCVAR_DEFINE_BOOL(condemned2_loaded_assets_debug, true, "Condemned 2/Debug", "
 namespace Condemned2 {
     namespace{
         constexpr uint32_t kEnginePtr = 0x82932814;
+        constexpr uint32_t kReleaseResource = 0x821B1010;
         constexpr uint32_t kGetManagerOffset = 0x14;
         constexpr uint32_t kLoadBundleOffset = 0x68;
         const std::vector<std::string> bundlePaths = {
@@ -66,33 +67,27 @@ namespace Condemned2 {
     }
     Condemned2Assets::~Condemned2Assets() = default;
  
-    bool LoadAdditionalBundle(Condemned2Assets* assets, PPCContext& ctx, uint8_t* base, const std::string& bundlePath ) {
-        if (assets == nullptr) {
-            return false;
-        }
-
-        if (assets->IsResourceLoaded(bundlePath)) {
-            if (assets->IsDebugging()) {
+    bool Condemned2Assets::LoadAdditionalBundle(PPCContext& ctx, uint8_t* base, const std::string& bundlePath ) {
+        if (IsBundleLoaded(bundlePath)) {
+            if (IsDebugging()) {
                 REXLOG_INFO("[Condemned2Assets] Already loaded: {}",bundlePath);
             }
             return true;
         }
-
-        Condemned2Hook* hook = assets->GetHook();
+        Condemned2Hook* hook = GetHook();
         if (hook == nullptr || hook->GetMemory() == nullptr) {
             return false;
         }
-        
-        const uint32_t engine = hook->get_pointer(hook->GetMemory()->TranslateVirtual<uint8_t*>(kEnginePtr));
+        const uint32_t engine = hook->get_pointer_from_pointer(kEnginePtr);
         if (engine == 0) {
             REXLOG_ERROR("[Condemned2Assets] Engine pointer is null");
             return false;
         }
-        const uint32_t engineVtable = hook->get_pointer(hook->GetMemory()->TranslateVirtual<uint8_t*>(engine));
+        const uint32_t engineVtable = hook->get_pointer_from_pointer(engine);
         if (engineVtable == 0) {
             return false;
         }
-        const uint32_t getManager = hook->get_pointer(hook->GetMemory()->TranslateVirtual<uint8_t*>(engineVtable + kGetManagerOffset));
+        const uint32_t getManager = hook->get_pointer_from_pointer(engineVtable + kGetManagerOffset);
         if (getManager == 0) {
             return false;
         }
@@ -101,11 +96,11 @@ namespace Condemned2 {
             REXLOG_ERROR("[Condemned2Assets] Resource manager is null");
             return false;
         }
-        const uint32_t managerVtable = hook->get_pointer(hook->GetMemory()->TranslateVirtual<uint8_t*>(resourceManager));
+        const uint32_t managerVtable = hook->get_pointer_from_pointer(resourceManager);
         if (managerVtable == 0) {
             return false;
         }
-        const uint32_t loadBundle = hook->get_pointer(hook->GetMemory()->TranslateVirtual<uint8_t*>(managerVtable + kLoadBundleOffset));
+        const uint32_t loadBundle = hook->get_pointer_from_pointer(managerVtable + kLoadBundleOffset);
         if (loadBundle == 0) {
             return false;
         }
@@ -113,25 +108,25 @@ namespace Condemned2 {
         if (pathAddress == 0) {
             return false;
         }
-        const uint32_t handle = assets->GetHook()->CallIndirectFunction(ctx,base,loadBundle,resourceManager,pathAddress);
+        const uint32_t handle = GetHook()->CallIndirectFunction(ctx,base,loadBundle,resourceManager,pathAddress);
         if (handle == 0) {
             return false;
         }
         REXLOG_INFO("[Condemned2Assets] Load {} -> handle {:#x}",bundlePath,handle);
-        assets->AddLoadedResource(bundlePath);
+        AddLoadedResource(bundlePath);
+        AddLoadedBundle(bundlePath, handle);
         return true;
     }
 
-    void LoadAdditionalBundles(Condemned2Assets* assets,PPCContext& ctx, uint8_t* base) {
-        if (assets == nullptr ||
-            !assets->CanLoadBundle()) {
+    void Condemned2Assets::LoadAdditionalBundles(PPCContext& ctx, uint8_t* base) {
+        if ( !CanLoadBundle() ) {
             return;
         }
-        assets->SetLoadingBundle(true);
+        SetLoadingBundle(true);
         for (const std::string& bundlePath : bundlePaths) {
-            LoadAdditionalBundle(assets, ctx, base, bundlePath);
+            LoadAdditionalBundle(ctx, base, bundlePath);
         }
-        assets->SetLoadingBundle(false);
+        SetLoadingBundle(false);
     }
 
     REX_HOOK_RAW(Game_LoadStartingBundle) {
@@ -150,6 +145,7 @@ namespace Condemned2 {
         if(g_condemned2_assets->IsDebugging()){
             REXLOG_INFO("[Game_StartReadingAssets] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g );
         }
+        g_condemned2_assets->ClearLoadedBundles();
         g_condemned2_assets->ClearLoadedResources();
         __imp__Game_StartReadingAssets(ctx, base);
     }
@@ -206,8 +202,7 @@ namespace Condemned2 {
             REXLOG_INFO("[Game_ProcessBundle] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g);
         }
         __imp__Game_ProcessBundle(ctx, base);
-
-        LoadAdditionalBundles( g_condemned2_assets,ctx, base);
+       g_condemned2_assets-> LoadAdditionalBundles(ctx, base);
     }
 
     //Object/Model Initialization

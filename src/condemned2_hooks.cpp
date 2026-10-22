@@ -239,6 +239,10 @@ namespace Condemned2 {
         return local.r3.u32;
     }
 
+    uint32_t Condemned2Hook::get_pointer_from_pointer(uint32_t physicalAddress) {
+        return get_pointer(_memory->TranslateVirtual<uint8_t*>(physicalAddress));
+    };
+
     //String Allocation
     uint32_t Condemned2Hook::AllocateHeapForString(const char* str) {
         if (!str)
@@ -323,15 +327,7 @@ namespace Condemned2 {
             auto it = pendingCCmds.begin();
             const uint32_t key = it->first;
             const auto cmd = it->second;
-            ProcessCmd(
-                frame,
-                base,
-                cmd.mgr,
-                cmd.cmd,
-                cmd.param_1,
-                cmd.param_2,
-                cmd.param_3
-            );
+            ProcessCmd(frame, base, cmd.mgr, cmd.cmd, cmd.param_1, cmd.param_2, cmd.param_3);
             g_condemned2_hooks->RemovePendingCommand(key);
         }
         g_condemned2_hooks->ResetScratchpad(); //Reset scratch after commands are processed.
