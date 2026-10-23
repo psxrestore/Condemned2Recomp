@@ -78,7 +78,7 @@ REX_EXTERN(__imp__TvAntennaAdjust); // Function that processes Radio/TV antenna 
 REX_EXTERN(__imp__IsMeleeWeapon); // Checks if player's current weapon is a melee weapon
 
 namespace rex::input::condemned2input {
-  namespace {constexpr rex::input::DeviceId kDevice = static_cast<rex::input::DeviceId>(0x4E4F5000); constexpr uint32_t kInputManager = 0x4005ae70; constexpr uint32_t  kInputManagerCrt = 0x200afcc0;}
+  namespace {constexpr rex::input::DeviceId kDevice = static_cast<rex::input::DeviceId>(0x4E4F5000); constexpr uint32_t kInputManager = 0x4005ae70; constexpr uint32_t kInputManagerCRT = 0x200afcc0;}
   Condemned2InputDriver* g_condemned2_input_driver = nullptr;
   Condemned2InputDriver::Condemned2InputDriver(rex::ui::Window* window, size_t window_z_order) : InputDriver(window, window_z_order) {
     REXLOG_INFO("[condemned2_input] Starting...");
@@ -502,7 +502,7 @@ namespace rex::input::condemned2input {
   
   uint32_t Condemned2InputDriver::GetInputManager(){
     if(isUsingCRT){
-      return kInputManagerCrt;
+      return kInputManagerCRT;
     }
     return kInputManager;
   }
@@ -604,21 +604,21 @@ namespace rex::input::condemned2input {
       return 1;
     }
 
-    //Firearms
-    MouseBind mouseClick = g_condemned2_input_driver->MouseClick();
-    if (btn == 0x11 || btn == 0x65 ) {
-      return mouseClick.isMouseRight || mouseClick.isMouseRightPressed;
-    }else if(btn == 0x1c || btn == 0x47){ 
-      return mouseClick.isMouseLeft || mouseClick.isMouseLeftPressed;
-    }
-
     //Melee Combos
+    MouseBind mouseClick = g_condemned2_input_driver->MouseClick();
     if( g_condemned2_input_driver->IsUsingMeleeWeapon()){
       if (btn == 0x7a ) {
         return mouseClick.isMouseRightPressed;
       }else if(btn == 0x79){ 
         return mouseClick.isMouseLeftPressed;
       }
+    }
+
+    //Firearms
+    if (btn == 0x11 || btn == 0x65 ) {
+      return mouseClick.isMouseRight || mouseClick.isMouseRightPressed;
+    }else if(btn == 0x1c || btn == 0x47){ 
+      return mouseClick.isMouseLeft || mouseClick.isMouseLeftPressed;
     }
     return 0;
   }
