@@ -152,7 +152,7 @@ namespace Condemned2 {
     }
 
     REX_HOOK_RAW(Game_StartReadingAssets) {
-        rex::cvar::SetFlagByName("clear_memory_page_state", "true");
+        //rex::cvar::SetFlagByName("clear_memory_page_state", "true");
         uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32, unk = ctx.r5.u64; 
         if(g_condemned2_assets->IsDebugging()){
             REXLOG_INFO("[Game_StartReadingAssets] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g );
@@ -167,7 +167,7 @@ namespace Condemned2 {
         g_condemned2_assets->ClearLoadedBundles();
         g_condemned2_assets->ClearLoadedResources();
         __imp__Game_StartReadingAssets(ctx, base);
-        rex::cvar::SetFlagByName("clear_memory_page_state", "false");
+        //rex::cvar::SetFlagByName("clear_memory_page_state", "false");
     }
 
     REX_HOOK_RAW(Game_IterateAssetList) {

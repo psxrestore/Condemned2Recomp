@@ -46,7 +46,7 @@ namespace Condemned2 {
                 //Other
                 {"audio_maxqframes","16"}, // Increasing might reduce performance
                 {"readback_memexport", "false"}, 
-                {"clear_memory_page_state", "false"}, //Required for RexCRT at times! Otherwise, disable for CPU performance!
+                {"clear_memory_page_state", "true"}, //"false"}, //Required for RexCRT at times! Otherwise, disable for CPU performance!
                 {"execute_unclipped_draw_vs_on_cpu", "true"}, // Fixes black screen issue for RTV render target path in Condemned 2.
                 {"gpu_allow_invalid_fetch_constants", "false"},
                 {"rexcrt_heap_enable", "true"},
