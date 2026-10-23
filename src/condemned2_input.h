@@ -54,6 +54,8 @@ namespace rex::input::condemned2input{
          X_RESULT GetDeviceKeystroke(DeviceId id, uint32_t flags, X_INPUT_KEYSTROKE* out_keystroke) override;
          void OnWindowAvailable(rex::ui::Window* window) override;
 
+         uint32_t GetInputManager();
+
          bool IsAnyDialogOpen();
          std::unordered_map<std::string, ImGuiWindow*> GetActiveWindows() { return activeWindows; }
 
@@ -112,6 +114,7 @@ namespace rex::input::condemned2input{
          double last_add_dy;
 
          //Custom input
+         bool isUsingCRT = false;
          bool blockFirstFrame = false;
          bool hasMeleeWeapon = false;
          double move_dx;

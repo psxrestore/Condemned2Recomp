@@ -49,6 +49,8 @@ namespace Condemned2 {
                 {"clear_memory_page_state", "false"}, // Performance gain by reducing CPU overhead. Could also cause instability.
                 {"execute_unclipped_draw_vs_on_cpu", "true"}, // Fixes black screen issue for RTV render target path in Condemned 2.
                 {"gpu_allow_invalid_fetch_constants", "false"},
+                {"rexcrt_heap_enable", "true"},
+                {"rexcrt_heap_size_mb", "256"},
             };
             inline static const std::vector<ConfigSetting> _defaultConfig = { // Default Settings
                 //Graphic Settings

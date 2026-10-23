@@ -1,0 +1,5 @@
+[rexcrt]
+RtlAllocateHeap = 0x8217B898
+RtlFreeHeap = 0x8217C180
+RtlSizeHeap = 0x8217AB30
+RtlReAllocateHeap = 0x8217C468

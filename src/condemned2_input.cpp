@@ -78,12 +78,14 @@ REX_EXTERN(__imp__TvAntennaAdjust); // Function that processes Radio/TV antenna 
 REX_EXTERN(__imp__IsMeleeWeapon); // Checks if player's current weapon is a melee weapon
 
 namespace rex::input::condemned2input {
-  namespace {constexpr rex::input::DeviceId kDevice = static_cast<rex::input::DeviceId>(0x4E4F5000); constexpr uint32_t kInputManager = 0x4005ae70;}
-
+  namespace {constexpr rex::input::DeviceId kDevice = static_cast<rex::input::DeviceId>(0x4E4F5000); constexpr uint32_t kInputManager = 0x4005ae70; constexpr uint32_t  kInputManagerCrt = 0x200afcc0;}
   Condemned2InputDriver* g_condemned2_input_driver = nullptr;
   Condemned2InputDriver::Condemned2InputDriver(rex::ui::Window* window, size_t window_z_order) : InputDriver(window, window_z_order) {
     REXLOG_INFO("[condemned2_input] Starting...");
     g_condemned2_input_driver = this;
+
+    //Compatibility with CRT.
+    isUsingCRT = (rex::cvar::GetFlagByName("rexcrt_heap_enable") == "true" ? true : false);
 
     //Initialize PC binds
     for (std::string bindName : pcBinds) {
@@ -491,11 +493,18 @@ namespace rex::input::condemned2input {
   // Native key presses in Condemned 2!
   void Condemned2InputDriver::NativeKeyPress(std::vector<int32_t> keycodes, bool release ){
     for (int32_t k : keycodes) {
-      PressBind(kInputManager, k);
+      PressBind(GetInputManager(), k);
       if(!release){
-        HoldBind(kInputManager, k);
+        HoldBind(GetInputManager(), k);
       }
     }
+  }
+  
+  uint32_t Condemned2InputDriver::GetInputManager(){
+    if(isUsingCRT){
+      return kInputManagerCrt;
+    }
+    return kInputManager;
   }
 
   //Resolves rex string cvars to mouse look enum!

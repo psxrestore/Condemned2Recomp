@@ -1,5 +1,4 @@
 # Condemned2Recomp Functions (Title Update Version)
-
 [functions]
 0x82201590 = {}
 0x82841168 = {}
@@ -33,3 +32,17 @@
 0x82123768 = {}
 0x8220BAF0 = {}
 0x82694360 = {} # Multiplayer
+
+[[switch_tables]]
+# Fixes spectator switch case failing to reach default
+address = 0x82414a38
+register = 5 # r11 subtracts r5 by one. So, let's ignore it, use the original value. 
+labels = [
+    0x82414bd8, # 0 - Go to default
+    0x82414a50, # 1
+    0x82414a88, # 2
+    0x82414ac0, # 3
+    0x82414af8, # 4
+    0x82414b30, # 5
+    0x82414bd8  # 6 - Go to default
+]
