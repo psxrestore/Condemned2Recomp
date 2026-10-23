@@ -9,7 +9,7 @@ game_root = "assets"
 file_path = "assets/default.xex"
 out_directory_path = "generated/default"
 includes = [
-	"condemned2recomp_config_tu_base.toml", # Base functions ( Don't touch unless any unresolved branches arise )
-	"condemned2recomp_config_tu.toml", # Named functions used for hooks
-	"condemned2recomp_config_midhooks.toml", # ASM Midhooks for Condemned2recomp
+	"config/condemned2recomp_config_tu_base.toml", # Base functions ( Don't touch unless any unresolved branches arise )
+	"config/condemned2recomp_config_tu.toml", # Named functions used for hooks
+	"config/condemned2recomp_config_midhooks.toml", # ASM Midhooks for Condemned2recomp
 ]
