@@ -14,11 +14,6 @@
 
 namespace Condemned2{
    class Condemned2Assets  {
-        struct AssetRequest {
-            uint32_t type;      // +0x00
-            uint32_t owner;     // +0x04
-            uint32_t assetKey;  // +0x08
-        };
     public:
         explicit Condemned2Assets(Condemned2::Condemned2Hook *hook);
         ~Condemned2Assets();
@@ -41,6 +36,7 @@ namespace Condemned2{
 
         bool LoadAdditionalBundle(PPCContext& ctx, uint8_t* base, const std::string& bundlePath );
         void LoadAdditionalBundles(PPCContext& ctx, uint8_t* base);
+        //void ReleaseBundle(PPCContext& ctx,uint8_t* base,uint32_t handle) ;
 
         bool IsAdditionalBundle(const char* filename){
             if (filename == nullptr)

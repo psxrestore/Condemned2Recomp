@@ -43,6 +43,7 @@ REXCVAR_DEFINE_BOOL(condemned2_loaded_assets_debug, true, "Condemned 2/Debug", "
 namespace Condemned2 {
     namespace{
         constexpr uint32_t kEnginePtr = 0x82932814;
+        //constexpr uint32_t kReleaseResource  = 0x821B1010;//0x821C0D50
         constexpr uint32_t kGetManagerOffset = 0x14;
         constexpr uint32_t kLoadBundleOffset = 0x68;
         const std::vector<std::string> bundlePaths = {
@@ -128,6 +129,17 @@ namespace Condemned2 {
         SetLoadingBundle(false);
     }
 
+    /*void Condemned2Assets::ReleaseBundle(PPCContext& ctx,uint8_t* base,uint32_t handle) {
+        if (handle == 0) {
+            return;
+        }
+        Condemned2Hook* hook = GetHook();
+        if (hook == nullptr) {
+            return;
+        }
+        hook->CallIndirectFunction(ctx, base, kReleaseResource, handle);
+    }*/
+
     REX_HOOK_RAW(Game_LoadStartingBundle) {
         if(g_condemned2_assets->IsDebugging()){
             REXLOG_INFO("[Game_LoadStartingBundle] object={:#x} value={:#x} lr={:#x}",ctx.r3.u32,ctx.r4.u32, ctx.lr);
@@ -140,13 +152,22 @@ namespace Condemned2 {
     }
 
     REX_HOOK_RAW(Game_StartReadingAssets) {
+        rex::cvar::SetFlagByName("clear_memory_page_state", "true");
         uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32, unk = ctx.r5.u64; 
         if(g_condemned2_assets->IsDebugging()){
             REXLOG_INFO("[Game_StartReadingAssets] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g );
         }
+        /*auto& loadedBundles = g_condemned2_assets->GetLoadedBundles();
+        while (!loadedBundles.empty()) {
+            auto it = loadedBundles.begin();
+            const auto bundleHandle = it->second;
+            g_condemned2_assets->ReleaseBundle(ctx, base, bundleHandle);
+            loadedBundles.erase(it);
+        }*/
         g_condemned2_assets->ClearLoadedBundles();
         g_condemned2_assets->ClearLoadedResources();
         __imp__Game_StartReadingAssets(ctx, base);
+        rex::cvar::SetFlagByName("clear_memory_page_state", "false");
     }
 
     REX_HOOK_RAW(Game_IterateAssetList) {
@@ -200,7 +221,7 @@ namespace Condemned2 {
             REXLOG_INFO("[Game_ProcessBundle] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g);
         }
         __imp__Game_ProcessBundle(ctx, base);
-       g_condemned2_assets-> LoadAdditionalBundles(ctx, base);
+       g_condemned2_assets->LoadAdditionalBundles(ctx, base);
     }
 
     //Object/Model Initialization
