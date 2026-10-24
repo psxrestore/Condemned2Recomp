@@ -26,7 +26,7 @@ namespace Condemned2 {
 
         private:
             inline static const std::string _title = "Condemned 2: Bloodshot"; // Window title
-            inline static const std::string _version = "0.3.7"; // Application version
+            inline static const std::string _version = "0.4.0"; // Application version
             inline static const std::vector<ConfigSetting> _requiredSettings = { // Required Settings 
                 //DX12
                 {"render_target_path_d3d12","rtv"}, 
