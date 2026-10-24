@@ -19,6 +19,9 @@
 #include <rex/ui/window.h>
 
 #include <cstring>
+#include <functional>
+#include <initializer_list>
+
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -101,14 +104,12 @@ namespace rex::input::condemned2input {
     //Internal binds
     //Menu navigation
     activeBinds["pause_menu"] = {{SDL_SCANCODE_ESCAPE}};
-    activeBinds["menu_nav_up"] = {{SDL_SCANCODE_UP, SDL_SCANCODE_W}};
-    activeBinds["menu_nav_down"] = {{SDL_SCANCODE_DOWN, SDL_SCANCODE_S}};
-    activeBinds["menu_nav_left"] = {{SDL_SCANCODE_LEFT, SDL_SCANCODE_A}};
-    activeBinds["menu_nav_right"] = {{SDL_SCANCODE_RIGHT, SDL_SCANCODE_D}};
-    activeBinds["menu_enter"] = {{SDL_SCANCODE_RETURN, SDL_SCANCODE_E}}; 
+    activeBinds["menu_nav_up"] = {{SDL_SCANCODE_UP}};
+    activeBinds["menu_nav_down"] = {{SDL_SCANCODE_DOWN}};
+    activeBinds["menu_nav_left"] = {{SDL_SCANCODE_LEFT}};
+    activeBinds["menu_nav_right"] = {{SDL_SCANCODE_RIGHT}};
+    activeBinds["menu_enter"] = {{SDL_SCANCODE_RETURN}}; 
     activeBinds["menu_go_back"] = {{SDL_SCANCODE_ESCAPE, SDL_SCANCODE_BACKSPACE}}; 
-    activeBinds["menu_category_left"] = {{SDL_SCANCODE_LEFT, SDL_SCANCODE_A}};
-    activeBinds["menu_category_right"] = {{SDL_SCANCODE_RIGHT, SDL_SCANCODE_D}};
 
     //Initialize mouse look
     rex::cvar::RegisterChangeCallback("condemned2_input_mouse", [&](std::string_view name, std::string_view new_value) {
@@ -289,7 +290,7 @@ namespace rex::input::condemned2input {
     if(IsDown(activeBinds["condemned2_input_walk"])){ // Walk
       moveScale = 0.5;
     }else{ //buttons |= X_INPUT_GAMEPAD_LEFT_SHOULDER
-      Held(activeBinds["condemned2_input_sprint"], {0x10} );
+      Held({activeBinds["condemned2_input_sprint"]}, {0x10} );
     }
     if(IsDown(activeBinds["condemned2_input_move_forward"])) ly = moveScale;
     if(IsDown(activeBinds["condemned2_input_move_backward"])) ly = -moveScale;
@@ -338,35 +339,25 @@ namespace rex::input::condemned2input {
     // Native PC Controls
     // UI Controls
     // Navigation
-    Held(activeBinds["menu_nav_up"], {0x82}, wheelY == 0.0f, wheelY > 0.0f);
-    Held(activeBinds["menu_nav_down"], {0x83}, wheelY == 0.0f, wheelY < 0.0f);
-    Held(activeBinds["menu_nav_left"], {0x84} );
-    Held(activeBinds["menu_nav_right"], {0x85} );
+    Held({activeBinds["menu_nav_up"], activeBinds["condemned2_input_move_forward"]}, {0x82}, wheelY == 0.0f, wheelY > 0.0f);
+    Held({activeBinds["menu_nav_down"], activeBinds["condemned2_input_move_backward"]}, {0x83}, wheelY == 0.0f, wheelY < 0.0f);
+    Held({activeBinds["menu_nav_right"], activeBinds["condemned2_input_move_right"]}, {0x85, 0x8e} );
+    Held({activeBinds["menu_nav_left"], activeBinds["condemned2_input_move_left"]}, {0x84, 0x8d} );
 
-    if(Pressed(activeBinds["menu_category_left"]) ){ //buttons |= X_INPUT_GAMEPAD_LEFT_SHOULDER
-      //NativeKeyPress(0x84);
-      NativeKeyPress({0x8d});
-    }
-    if(Pressed(activeBinds["menu_category_right"]) ){ //buttons |= X_INPUT_GAMEPAD_RIGHT_SHOULDER;
-      //NativeKeyPress(0x85);
-      NativeKeyPress({0x8e});
-    }
     // Commands
-    if(Pressed(activeBinds["menu_enter"])){ // buttons |= X_INPUT_GAMEPAD_A;
-      NativeKeyPress({
-        //Submit menu confirm
-        0xa6,
-        0x5b,
-        //Menu confirm
-        0x87,
-        0xb5,
-        //In-game menu confirm
-        0xa7,
-        0xb7, // Used for dialogs in fight club
-        0xba, // Close tutorial dialogs
-        0x5d, // Choose investigation choice
-      });
-    }
+    Held({activeBinds["condemned2_input_use"], activeBinds["menu_enter"]}, {
+      //Submit menu confirm
+      0xa6,
+      0x5b,
+      //Menu confirm
+      0x87,
+      0xb5,
+      0xa7, //In-game menu confirm
+      0xb7, // Used for dialogs in fight club
+      0xba, // Close tutorial dialogs
+      0x57,  // Use action
+      0x5d // Choose investigation choice
+    } );
     if(Pressed(activeBinds["menu_go_back"])){ //buttons |= X_INPUT_GAMEPAD_B;
       NativeKeyPress({
         0x88,
@@ -379,9 +370,6 @@ namespace rex::input::condemned2input {
     //Actions
     if(Pressed(activeBinds["pause_menu"])){ //buttons |= X_INPUT_GAMEPAD_START
       NativeKeyPress({0xd});
-    }
-    if(Pressed(activeBinds["condemned2_input_use"])){ //buttons |= X_INPUT_GAMEPAD_A;
-      NativeKeyPress({0x57});
     }
     if(Pressed(activeBinds["condemned2_input_flashlight"])){ //buttons |= X_INPUT_GAMEPAD_B;
       NativeKeyPress({0x72,0x8c});
@@ -401,9 +389,9 @@ namespace rex::input::condemned2input {
     if(Pressed(activeBinds["condemned2_input_taser"])){ //buttons |= X_INPUT_GAMEPAD_DPAD_UP
       NativeKeyPress({0x3e});
     }
-    Held(activeBinds["condemned2_input_hook_attacks"], {0x42, 0xa8} );
-    Held(activeBinds["condemned2_input_objectives"], {0x4f, 0x4e} );
-    Held(activeBinds["condemned2_input_forensics"], {0x74, 0x71} );
+    Held({activeBinds["condemned2_input_hook_attacks"]}, {0x42, 0xa8} );
+    Held({activeBinds["condemned2_input_objectives"]}, {0x4f, 0x4e} );
+    Held({activeBinds["condemned2_input_forensics"]}, {0x74, 0x71} );
     if(Pressed(activeBinds["condemned2_input_tool_take_picture"])){
       NativeKeyPress({0xb9});
     }
@@ -485,14 +473,17 @@ namespace rex::input::condemned2input {
     return edge;
   }
 
-  void Condemned2InputDriver::Held(Bind& b, std::vector<int32_t> keycodes, bool down, bool pressed) {
-    if((!IsDown(b) || down ) && b.prev){
-      NativeKeyPress(keycodes, true);
+  void Condemned2InputDriver::Held( std::initializer_list<std::reference_wrapper<Bind>> binds, std::vector<int32_t> keycodes, bool down, bool pressed) {
+    for ( Bind& bind : binds) {
+      if((!IsDown(bind) || down ) && bind.prev){
+        NativeKeyPress(keycodes, true);
+      }
+      if(Pressed(bind) || pressed ){
+        NativeKeyPress(keycodes);
+        bind.prev = true;
+      } 
+      if(!down && pressed) return;
     }
-    if(Pressed(b) || pressed ){
-      NativeKeyPress(keycodes);
-      b.prev = true;
-    } 
   }
 
   // Native key presses in Condemned 2!

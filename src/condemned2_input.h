@@ -11,6 +11,8 @@
 #include <mutex>
 #include <queue>
 #include <string>
+#include <functional>
+#include <initializer_list>
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -62,7 +64,7 @@ namespace rex::input::condemned2input{
          Bind ParseBind(const std::string& s);
          bool IsDown(const Bind &b);
          bool Pressed(Bind& b);
-         void Held(Bind& b, std::vector<int32_t> keycodes, bool down = false, bool pressed = false);
+         void Held( std::initializer_list<std::reference_wrapper<Bind>> binds, std::vector<int32_t> keycodes, bool down = false, bool pressed = false);
          void NativeKeyPress(std::vector<int32_t> keycodes, bool release = false);
          std::unordered_map<std::string, Bind> GetActiveBinds() { return activeBinds; }
 
