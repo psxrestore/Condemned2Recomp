@@ -26,20 +26,18 @@ REX_EXTERN(__imp__GunAccuracyMultiplier);
 REX_EXTERN(__imp__RandomAccuracyKnockoff);
 
 //Cheats
-REXCVAR_DEFINE_BOOL(condemned2_cheat_fps_mode, false, "Condemned 2/Extras/Unlockables", "FPS Mode ( Must be enabled before entering menu!!! )");
-REXCVAR_DEFINE_BOOL(condemned2_cheat_unlock_all_levels, false, "Condemned 2/Extras/Unlockables", "Unlocks every level!");
-REXCVAR_DEFINE_BOOL(condemned2_cheat_unlock_upgrades, false, "Condemned 2/Extras/Unlockables", "Unlocks all upgrades!");
-REXCVAR_DEFINE_BOOL(condemned2_cheat_top_gun_accuracy, false, "Condemned 2/Extras/Unlockables", "Gives player 100% gun efficiency!");
+REXCVAR_DEFINE_BOOL(condemned2_cheat_fps_mode, false, "Condemned 2/Extras/Unlockables", "FPS Mode");
+REXCVAR_DEFINE_BOOL(condemned2_cheat_unlock_all_levels, false, "Condemned 2/Extras/Unlockables", "Unlock All Levels");
+REXCVAR_DEFINE_BOOL(condemned2_cheat_unlock_upgrades, false, "Condemned 2/Extras/Unlockables", "Unlocks All Upgrades");
+REXCVAR_DEFINE_BOOL(condemned2_cheat_top_gun_accuracy, false, "Condemned 2/Extras/Unlockables", "100% Accuracy");
 //QoL
-//REXCVAR_DEFINE_BOOL(condemned2_qol_skip_intro_movies, false, "Condemned 2/Extras/QoL Improvements", "Skips intro movies.");
-REXCVAR_DEFINE_BOOL(condemned2_qol_skip_ingame_movies, false, "Condemned 2/Extras/QoL Improvements", "Skips in-game movies.");
+//REXCVAR_DEFINE_BOOL(condemned2_qol_skip_intro_movies, false, "Condemned 2/Extras/QoL Improvements", "Skip Intro");
+REXCVAR_DEFINE_BOOL(condemned2_qol_skip_ingame_movies, false, "Condemned 2/Extras/QoL Improvements", "Skip In-Game Movies");
 //Console
-//QoL
-REXCVAR_DEFINE_STRING(condemned2_cmd, "", "Condemned 2/Extras/Console", "Runs console variables.");
-REXCVAR_DEFINE_STRING(condemned2_msg, "", "Condemned 2/Extras/Console", "Sends commands to managers.");
-
+REXCVAR_DEFINE_STRING(condemned2_cmd, "", "Condemned 2/Extras/Console", "In-game Console");
+REXCVAR_DEFINE_STRING(condemned2_msg, "", "Condemned 2/Extras/Console", "Manager Console.");
 //Weapon Spawner
-REXCVAR_DEFINE_STRING(condemned2_weapon_spawner, "None","Condemned 2/Extras/Unlockables", "Allows you to spawn any weapon in-game. (Work-in-progress)").allowed({ //Values found in yeti.gamedb!
+REXCVAR_DEFINE_STRING(condemned2_weapon_spawner, "None","Condemned 2/Extras/Unlockables", "Weapon Spawner").allowed({ //Values found in yeti.gamedb!
     "None", "Baseball_Bat", "Baton", "BattleAxe", "Brick", "Broadsword", "Cleaver", "Crowbar", "FireAxe",
     "Flashlight", "Golf_Club","Handgun_22", "Handgun_38", "Handgun_44", "Handgun_9mm", "Large_Wrench", 
     "Paper_Cutter", "Pipe", "Pipe_Lever", "Pipe_Steam", "Rebar_Bent", "Rebar_Straight", "Rip_Hammer", 

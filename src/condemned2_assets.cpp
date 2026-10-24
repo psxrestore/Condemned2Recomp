@@ -153,8 +153,8 @@ namespace Condemned2 {
 
     REX_HOOK_RAW(Game_StartReadingAssets) {
         //rex::cvar::SetFlagByName("clear_memory_page_state", "true");
-        uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32, unk = ctx.r5.u64; 
         if(g_condemned2_assets->IsDebugging()){
+            uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32, unk = ctx.r5.u64; 
             REXLOG_INFO("[Game_StartReadingAssets] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g );
         }
         /*auto& loadedBundles = g_condemned2_assets->GetLoadedBundles();
@@ -171,8 +171,8 @@ namespace Condemned2 {
     }
 
     REX_HOOK_RAW(Game_IterateAssetList) {
-        uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32, unk = ctx.r5.u64; 
         if(g_condemned2_assets->IsDebugging()){
+            uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32, unk = ctx.r5.u64; 
             REXLOG_INFO("[Game_IterateAssetList] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g );
         }
         __imp__Game_IterateAssetList(ctx, base);
@@ -216,8 +216,8 @@ namespace Condemned2 {
     }
 
     REX_HOOK_RAW(Game_ProcessBundle) {
-        uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32; 
         if(g_condemned2_assets->IsDebugging()){
+            uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32; 
             REXLOG_INFO("[Game_ProcessBundle] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g);
         }
         __imp__Game_ProcessBundle(ctx, base);
@@ -230,9 +230,9 @@ namespace Condemned2 {
     }
 
     REX_HOOK_RAW(Game_InitWorldObject) {
-        uint32_t name_g = ctx.r4.u32;
-        const char* name_h = g_condemned2_assets->GetHook()->GetMemory()->TranslateVirtual<const char*>(name_g);
         if(g_condemned2_assets->IsDebugging()){
+            uint32_t name_g = ctx.r4.u32;
+            const char* name_h = g_condemned2_assets->GetHook()->GetMemory()->TranslateVirtual<const char*>(name_g);
             REXLOG_INFO("[condemned2_hooks][Game_InitWorldObject] this={:#x} name_address={:#x} name={}", ctx.r3.u32, name_g, name_h);
         }
         __imp__Game_InitWorldObject(ctx, base);

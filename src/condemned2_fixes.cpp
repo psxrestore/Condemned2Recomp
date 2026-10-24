@@ -26,4 +26,5 @@ namespace Condemned2 {
     Condemned2Fixes::Condemned2Fixes(Condemned2::Condemned2Hook *hook) : _hook(hook) {}
     Condemned2Fixes::~Condemned2Fixes() = default;
 
+    
 }  // namespace Condemned2
