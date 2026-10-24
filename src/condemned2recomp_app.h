@@ -130,7 +130,7 @@ namespace Condemned2 {
 
             void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override {
                 //PC Menu Bind
-                /*rex::ui::RegisterBind("bind_pc_menu", "Escape", "Toggle PC Menu overlay", [this, drawer] {
+                rex::ui::RegisterBind("bind_pc_menu", "F1", "Toggle PC Menu overlay", [this, drawer] {
                     app_context().CallInUIThreadDeferred([this, drawer]() mutable {
                         if (_launcherDialog ) {
                             _launcherDialog.reset();
@@ -144,7 +144,7 @@ namespace Condemned2 {
                             }, &app_context(), nlohmann::json(nullptr), loadedFonts, GameLauncherDialog::LauncherState::PCMenu);
                         }
                     });
-                });*/
+                });
 
                 //Imgui Window Dialog Theme
                 //Separate from the Condemned2Recomp launcher

@@ -55,11 +55,11 @@ namespace Condemned2 {
             inline static const std::vector<ConfigSetting> _defaultConfig = { // Default Settings
                 //Graphic Settings
                 {"native_2x_msaa", "false"},
-                {"anisotropic_override", "2"},
+                {"anisotropic_override", "5"},
                 {"resolution_scale", "2"},
                 //Vsync
                 {"vsync","false"},
-                {"video_mode_refresh_rate","120"},
+                {"video_mode_refresh_rate","60"},
                 //PC Controls
                 {"input_backend","sdl"},
             };

@@ -9,6 +9,8 @@
 #include <imgui.h> 
 #include <rex/ui/imgui_dialog.h>
 #include <rex/ui/imgui_drawer.h>
+#include <rex/ui/keybinds.h>
+#include <rex/ui/sdl_virtual_key.h>
 
 #include <atomic>
 #include <thread>
@@ -82,6 +84,7 @@ namespace Condemned2 {
         PCMenu, // Separate PC only menu
         PCSettings, //Adjusts PC game settings
         PCGameSettings, //Adjusts game settings
+        PCCheatSettings, //Adjusts cheat settings
         PCGraphics, //Adjusts graphics settings
         PCInput, //Adjust input settings
         //Errors ( Fission Mailed )
@@ -426,8 +429,45 @@ namespace Condemned2 {
 
         LauncherDialog PCGameSettings;
         PCGameSettings.customOnly = true;
-        PCGameSettings.onDraw = [this](ImGuiIO& io){ ShowDialog_PCGameSettings(io); };
+        PCGameSettings.onDraw = [this](ImGuiIO& io){ 
+          ShowDialog_SettingMenus(io);
+          ImGui::SameLine();
+          ShowDialog_CvarCategory(io, "Condemned 2/Extras/QoL Improvements"); 
+          ShowDialog_ApplyButton(io);
+        };
         stateTable[LauncherState::PCGameSettings] = PCGameSettings;
+
+        LauncherDialog PCCheatSettings;
+        PCCheatSettings.customOnly = true;
+        PCCheatSettings.onDraw = [this](ImGuiIO& io){ 
+          ShowDialog_SettingMenus(io);
+          ImGui::SameLine();
+          ShowDialog_CvarCategory(io, "Condemned 2/Extras/Unlockables"); 
+          ShowDialog_ApplyButton(io);
+        };
+        stateTable[LauncherState::PCCheatSettings] = PCCheatSettings;
+
+        LauncherDialog PCGraphics;
+        PCGraphics.customOnly = true;
+        PCGraphics.onDraw = [this](ImGuiIO& io){ 
+          ShowDialog_SettingMenus(io);
+          ImGui::SameLine();
+          ShowDialog_CvarCategory(io, "Condemned 2/Graphics"); 
+          ShowDialog_ApplyButton(io);
+        };
+        stateTable[LauncherState::PCGraphics] = PCGraphics;
+
+        LauncherDialog PCInput;
+        PCInput.customOnly = true;
+        PCInput.onDraw = [this](ImGuiIO& io){ 
+          ShowDialog_SettingMenus(io);
+          ImGui::SameLine();
+          ShowDialog_CvarCategory(io, "Condemned 2/Input");
+          ShowDialog_CvarCategory(io, "Condemned 2/Input/Mouse");  
+          ShowDialog_CvarCategory(io, "Condemned 2/Input/Keyboard"); 
+          ShowDialog_ApplyButton(io);
+        };
+        stateTable[LauncherState::PCInput] = PCInput;
 
         //End States
         LauncherDialog stepExit;
@@ -453,9 +493,14 @@ namespace Condemned2 {
         if (!json.is_null()) {
           pendingState = LauncherState::UpdateMain;
         }
+
+        // Register once:
+        SDL_AddEventWatch(&GameLauncherDialog::WatchEventCallback, this);
       }
 
       ~GameLauncherDialog(){
+        SDL_RemoveEventWatch(&GameLauncherDialog::WatchEventCallback, this);
+        
         if (workerThread.joinable()) {
           workerThread.join();
         }
@@ -577,6 +622,85 @@ namespace Condemned2 {
           return (fullSize > 0) ? std::clamp((float)bytesDone / (float)fullSize, 0.0f, 1.0f) : 0.0f;
       }
 
+      void HandleSDLKey() {
+        if(!capturingBind || bind_name.empty() || key_name.empty() ){
+          return;
+        }
+        std::string current = rex::cvar::GetFlagByName(bind_name);
+        size_t comma = current.find(',');
+        std::string bind1 = current.substr(0, comma);
+        std::string bind2 = (comma != std::string::npos) ? current.substr(comma + 1) : "";
+        if (bind_type == 0) {
+            bind1 = key_name;
+        } else {
+            bind2 = key_name;
+        }
+        std::string updated = bind1 + "," + bind2;
+        rex::cvar::SetFlagByName(bind_name, updated);
+        capturingBind = false;
+        key_name.clear();
+        bind_name.clear();
+      }
+
+      std::string MouseButtonName(Uint8 button) {
+        switch (button) {
+            case SDL_BUTTON_LEFT:
+                return "Mouse1";
+            case SDL_BUTTON_RIGHT:
+                return "Mouse2";
+            case SDL_BUTTON_MIDDLE:
+                return "Mouse3";
+            case SDL_BUTTON_X1:
+                return "Mouse4";
+            case SDL_BUTTON_X2:
+                return "Mouse5";
+            default:
+                return {};
+        }
+      }
+
+      static std::string GetModifierScancode(SDL_Scancode scancode) {
+        switch (scancode) {
+            case SDL_SCANCODE_LCTRL:
+              return "Left Ctrl";
+            case SDL_SCANCODE_RCTRL:
+              return "Right Ctrl";
+            case SDL_SCANCODE_LSHIFT:
+              return "Left Shift";
+            case SDL_SCANCODE_RSHIFT:
+              return "Right Shift";
+            case SDL_SCANCODE_LALT:
+              return "Left Alt";
+            case SDL_SCANCODE_RALT:
+              return "Right Alt";
+            default:
+                return "";
+        }
+      }
+
+      static bool WatchEventCallback(void* userdata, SDL_Event* event){
+        auto* self = static_cast<GameLauncherDialog*>(userdata);
+        if (!self || !event)
+          return true;
+
+        if(!self->capturingBind ){
+          return true;
+        }
+
+        if (event->type == SDL_EVENT_KEY_DOWN) {
+            std::string isModifierKey = GetModifierScancode(event->key.scancode);
+            if( isModifierKey.empty()){
+              auto virtual_key = rex::ui::TranslateSDLScancode(event->key.scancode);
+              self->key_name = rex::ui::VirtualKeyToString(virtual_key);
+            }else{
+              self->key_name = isModifierKey;
+            }
+        }else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && !ImGui::IsMouseReleased(ImGuiMouseButton_Left) ) {
+          self->key_name = self->MouseButtonName(event->button.button);
+        }
+        return true;
+      }
+      
       //Launcher Dialogs
       //Base Dialogs
       void ShowDialog_OnDraw(ImGuiIO& io, const LauncherDialog& newStep) {
@@ -588,7 +712,10 @@ namespace Condemned2 {
         UIWidgets::AddText(newStep.header.c_str(), _loadedFonts["ZTNature-Black"], ImVec2(640, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f),  48.0f); //Subtitle
         ImGui::PopStyleVar();
         ImGui::EndChild();
-  
+
+        //Input
+        HandleSDLKey();
+        
         //Draw custom controls only
         if(newStep.customOnly){
           if(newStep.onDraw){
@@ -692,10 +819,15 @@ namespace Condemned2 {
       }
 
       void ShowDialog_PCMenu(ImGuiIO& io) {
-        int menuHeight = 500;
-        float remaining = ImGui::GetContentRegionAvail().y;
-        ImGui::Dummy(ImVec2(0.0f, remaining - menuHeight));
+        const float menuHeight = 500.0f;
+        const float bottomPadding = 16.0f;
 
+        ImVec2 cursor = ImGui::GetCursorPos();
+        float remaining = ImGui::GetContentRegionAvail().y;
+
+        ImGui::SetCursorPosY(
+            cursor.y + remaining - menuHeight - bottomPadding
+        );
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(64, 64));
         ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
         ImGui::BeginChild("PCMenu", ImVec2(io.DisplaySize.x, menuHeight), true);
@@ -705,12 +837,6 @@ namespace Condemned2 {
         ImGui::SameLine();
         UIWidgets::AddText("Resume playing.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
         
-        if (UIWidgets::AddButton("Native Menu", _loadedFonts["ZTNature-Black"])) { 
-          CloseDialog();
-        }
-        ImGui::SameLine();
-        UIWidgets::AddText("Open Condemned 2's native menu.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
-
         if (UIWidgets::AddButton("PC Settings", _loadedFonts["ZTNature-Black"])) { 
           pendingState = LauncherState::PCSettings;
         }
@@ -726,18 +852,18 @@ namespace Condemned2 {
         ImGui::EndChild();
         ImGui::PopStyleColor();
         ImGui::PopStyleVar();
-      }
-
-      void ShowDialog_PCGameSettings(ImGuiIO& io) {
-        ImGui::BeginChild("PCSettingOptions", ImVec2(io.DisplaySize.x * 0.4, ImGui::GetContentRegionAvail().y), false);
-        ShowDialog_SettingMenus(io);
-        ImGui::EndChild();
+        ImGui::SetCursorPos(cursor);
       }
 
       void ShowDialog_SettingMenus(ImGuiIO& io) {
-        int menuHeight = 500;
+        ImGui::BeginChild("SettingCategories", ImVec2(io.DisplaySize.x * 0.4, ImGui::GetContentRegionAvail().y), false);
+        const float menuHeight = 500.0f;
+        const float bottomPadding = 16.0f;
+        ImVec2 cursor = ImGui::GetCursorPos();
         float remaining = ImGui::GetContentRegionAvail().y;
-        ImGui::Dummy(ImVec2(0.0f, remaining - menuHeight));
+        ImGui::SetCursorPosY(
+            cursor.y + remaining - menuHeight - bottomPadding
+        );
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(64, 64));
         ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
@@ -747,15 +873,21 @@ namespace Condemned2 {
         }
         ImGui::SameLine();
         UIWidgets::AddText("Change game settings.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
+
+        if (UIWidgets::AddButton("Cheats", _loadedFonts["ZTNature-Black"])) { 
+          pendingState = LauncherState::PCCheatSettings;
+        }
+        ImGui::SameLine();
+        UIWidgets::AddText("Change cheat settings.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
         
         if (UIWidgets::AddButton("Graphics", _loadedFonts["ZTNature-Black"])) { 
-          CloseDialog();
+          pendingState = LauncherState::PCGraphics;
         }
         ImGui::SameLine();
         UIWidgets::AddText("Configure graphic settings.", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
 
         if (UIWidgets::AddButton("Input", _loadedFonts["ZTNature-Black"])) { 
-          CloseDialog();
+          pendingState = LauncherState::PCInput;
         }
         ImGui::SameLine();
         UIWidgets::AddText("Configure input", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f );
@@ -767,8 +899,152 @@ namespace Condemned2 {
         UIWidgets::AddText("Go back to the PC menu", _loadedFonts["ZTNature-Medium"], ImVec2(512, 64), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f);
 
         ImGui::EndChild();
+        ImGui::SetCursorPos(cursor);
         ImGui::PopStyleColor();
         ImGui::PopStyleVar();
+        ImGui::EndChild();
+      }
+
+      void ShowDialog_ApplyButton(ImGuiIO& io) {
+        constexpr float buttonWidth = 256.0f;
+        constexpr float buttonHeight = 64.0f;
+        constexpr float rightPadding = 64.0f;
+        constexpr float bottomPadding = 64.0f;
+        const ImVec2 childSize(buttonWidth, buttonHeight);
+        ImGui::SetCursorPos(ImVec2( io.DisplaySize.x - buttonWidth - rightPadding,io.DisplaySize.y - buttonHeight - bottomPadding ));
+        ImGui::BeginChild("ApplyButton", childSize, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        if (UIWidgets::AddButton("Save Settings", _loadedFonts["ZTNature-Black"], ImVec2(buttonWidth, buttonHeight), 24.0f)) {
+          rex::cvar::SaveConfig(_paths.config_path);
+        }
+        ImGui::EndChild();
+      }
+
+      void ShowDialog_CvarCategory(ImGuiIO& io, std::string subCategory){
+        ImGui::SetCursorPosY(ImGui::GetStyle().WindowPadding.y + 160);
+        ImGui::BeginChild("SettingOptions", ImVec2(io.DisplaySize.x * 0.59, ImGui::GetContentRegionAvail().y), false);
+        auto& registry = rex::cvar::GetRegistry();
+        std::vector<std::string> category;
+        for (const auto& entry : registry) {
+          if (entry.category == subCategory) {
+            category.push_back(entry.name);
+          }
+        }
+        if (subCategory.find("Graphics") != std::string::npos) {
+          category.push_back("resolution_scale");
+          category.push_back("vsync");
+          category.push_back("native_2x_msaa");
+        }
+        //auto category = rex::cvar::ListFlagsByCategory(subCategory);
+        for (const std::string& cvarName : category) {
+          const rex::cvar::FlagEntry* info = rex::cvar::GetFlagInfo(cvarName);
+          if (info) {
+            std::string name = info->name;
+            rex::cvar::FlagType type = info->type;
+            std::string category = info->category;
+            std::string description = info->description;
+            std::string default_value = info->default_value;
+            std::string current_value = rex::cvar::GetFlagByName(name);
+            const auto& allowed = info->constraints.allowed_values;
+            double min_value = 0;
+            double max_value = 1;
+            if (info->constraints.min.has_value()) {
+              min_value = *info->constraints.min;
+            }
+            if (info->constraints.max.has_value()) {
+              max_value = *info->constraints.max;
+            }
+            switch(type){
+              case rex::cvar::FlagType::Boolean:
+              {
+                bool checkBox = (current_value == "true" ? true : false);
+                if (UIWidgets::AddCheckbox(description.c_str(), _loadedFonts["ZTNature-Medium"], 32.0f, &checkBox)){
+                  rex::cvar::SetFlagByName(name, checkBox ? "true" : "false"); 
+                }
+              }
+              break;
+              case rex::cvar::FlagType::String:
+              {
+                if(subCategory.find("Keyboard") != std::string::npos){
+                  size_t comma = current_value.find(',');
+                  std::string bind1 = current_value.substr(0, comma);
+                  std::string bind2 = (comma != std::string::npos) ? current_value.substr(comma + 1) : "";
+                  if(capturingBind && name == bind_name){
+                    if(bind_type == 0){
+                      bind1 = "Press any button...";
+                    }else if(bind_type == 1){
+                      bind2 = "Press any button...";
+                    }
+                  }
+                  std::string bind1_id = name + "_bind1";
+                  std::string bind2_id = name + "_bind2";
+                  UIWidgets::AddText(description.c_str(), _loadedFonts["ZTNature-Black"], ImVec2(512, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 20.0f );
+                  ImGui::SameLine();
+                  bool rightClick = false;
+                  if (UIWidgets::AddButton(bind1.c_str(), _loadedFonts["ZTNature-Black"], ImVec2(256, 36), 24.0f, bind1_id.c_str(), &rightClick)) { 
+                    if(!capturingBind){
+                      capturingBind = true;
+                      bind_type = 0;
+                      bind_name = name;
+                    }
+                  }
+                  if(rightClick){
+                    rex::cvar::SetFlagByName(name, bind2);
+                  }
+                  ImGui::SameLine();
+                  if (UIWidgets::AddButton(bind2.c_str(), _loadedFonts["ZTNature-Black"], ImVec2(256, 36), 24.0f, bind2_id.c_str(), &rightClick)) { 
+                    if(!capturingBind){
+                      capturingBind = true;
+                      bind_type = 1;
+                      bind_name = name;
+                    }
+                  }
+                  if(rightClick){
+                    rex::cvar::SetFlagByName(name, bind1);
+                  }
+                }else if (info->constraints.HasAllowedValues()) {
+                  const auto& allowed = info->constraints.allowed_values;
+                  int selected = 0;
+                  for (size_t i = 0; i < allowed.size(); ++i) {
+                      if (allowed[i] == current_value) {
+                          selected = static_cast<int>(i);
+                          break;
+                      }
+                  }
+                  if (UIWidgets::AddDroplist(description.c_str(), &selected, allowed, _loadedFonts["ZTNature-Medium"], 32.0f)){
+                    rex::cvar::SetFlagByName(name, allowed[selected]); 
+                  }
+                }else{
+                  char strValue[64] = {};
+                  std::snprintf(strValue, sizeof(strValue),"%s",current_value.c_str());
+                  if (UIWidgets::AddTextInput(description.c_str(), strValue, sizeof(strValue), _loadedFonts["ZTNature-Medium"], 32.0f)) {
+                    rex::cvar::SetFlagByName(name, current_value); 
+                  }
+                }
+              }
+              break;
+              case rex::cvar::FlagType::Int32:
+              case rex::cvar::FlagType::Int64:
+              case rex::cvar::FlagType::Uint32:
+              case rex::cvar::FlagType::Uint64:
+              case rex::cvar::FlagType::Double:
+              {
+                float dValue = std::stod(current_value);
+                if (UIWidgets::AddSlider(description.c_str(), &dValue, min_value, max_value, _loadedFonts["ZTNature-Medium"], 32.0f)){
+                  rex::cvar::SetFlagByName(name, std::to_string(dValue)); 
+                }
+              }
+              break;
+              default:
+              break;
+            }
+          } 
+        }
+        ImGui::EndChild();
+        ImVec2 min = ImGui::GetItemRectMin();
+        ImVec2 max = ImGui::GetItemRectMax();
+        min.x -= 12.0f;
+        min.y -= 12.0f;
+        UIWidgets::DrawGradientBackground(min, max);
       }
 
       //Used for the updater!!!
@@ -804,6 +1080,11 @@ namespace Condemned2 {
         std::mutex _logMutex;
         std::string _logSnapshot;
         std::string _errorSnapshot;
+
+        bool capturingBind = false;
+        int bind_type = 0;
+        std::string bind_name;
+        std::string key_name = "";
 
         //Paths
         //Animated logo

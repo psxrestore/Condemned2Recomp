@@ -51,17 +51,24 @@ namespace Condemned2 {
         }
       }
 
-      static bool AddButton(const char* label, ImFont* font, ImVec2 size = ImVec2(256, 64), float fontSize = 0.0f){
-        ImGui::InvisibleButton((std::string(label) + "##id").c_str(), size);     
+      static bool AddButton(const char* label, ImFont* font, ImVec2 size = ImVec2(256, 64), float fontSize = 0.0f, const char *id = nullptr, bool* rightClicked = nullptr){
+        std::string widget_id = std::string("##") + (id ? id : label);
+        ImGui::PushID(widget_id.c_str());
+        ImGui::InvisibleButton(widget_id.c_str(), size);     
         ImDrawList* dl = ImGui::GetWindowDrawList();
         ImVec2 p0 = ImGui::GetItemRectMin();
         ImVec2 p1 = ImGui::GetItemRectMax();
         bool hovered = ImGui::IsItemHovered();
         bool active  = ImGui::IsItemActive();
-        bool clicked = ImGui::IsItemClicked();
+        bool clicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+        bool rightClick = ImGui::IsItemClicked(ImGuiMouseButton_Right);
+        if (rightClicked)
+            *rightClicked = rightClick;
+
         dl->AddRectFilled(p0, p1, ImGui::ColorConvertFloat4ToU32(!hovered ? ImVec4(0.0f, 0.0f, 0.0f, 1.0f) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f) ), 0.0f);
         dl->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)), 0.0f);
         AddText(label, font, size, (!hovered ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(0.0f, 0.0f, 0.0f, 1.0f) ),  fontSize,  true );
+        ImGui::PopID();
         return clicked;
       }
 
@@ -93,6 +100,94 @@ namespace Condemned2 {
         if(outline){
           dl->AddRect(end, start, ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)), 0.0f);
         }
+      }
+      
+      static bool AddCheckbox(const char* label, ImFont* font, float fontSize, bool* value)
+      {
+        ImGui::PushID(label);
+        const float boxSize = 32.0f;
+        const float spacing = 8.0f;
+        ImVec2 pos = ImGui::GetCursorScreenPos();
+        ImGui::PushFont(font, fontSize);
+        ImVec2 textSize = ImGui::CalcTextSize(label);
+        ImVec2 totalSize(boxSize + spacing + textSize.x,ImMax(boxSize, textSize.y));
+        ImGui::InvisibleButton("##checkbox", totalSize);
+        bool hovered = ImGui::IsItemHovered();
+        if (ImGui::IsItemClicked())
+            *value = !*value;
+
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        ImVec2 boxMin(pos.x, pos.y + (totalSize.y - boxSize) * 0.5f);
+        ImVec2 boxMax(boxMin.x + boxSize, boxMin.y + boxSize);
+        ImU32 bgColor = *value ? ImGui::ColorConvertFloat4ToU32(ImVec4(0.6f, 0.0f, 0.0f, 1.0f)) : hovered ? ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 1.0f)) : ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        ImU32 borderColor = *value ? ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)) : ImGui::ColorConvertFloat4ToU32(ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+        dl->AddRectFilled( boxMin, boxMax, bgColor, 4.0f);
+        dl->AddRect(boxMin, boxMax, borderColor, 4.0f, 0, 1.2f);
+        if (*value) {
+            float scaleIcon = boxSize / 18.0f;
+            ImVec2 p1(boxMin.x + 4.0f * scaleIcon, boxMin.y + 9.0f * scaleIcon);
+            ImVec2 p2(boxMin.x + 7.0f * scaleIcon, boxMin.y + 12.0f * scaleIcon);
+            ImVec2 p3(boxMin.x + 14.0f * scaleIcon, boxMin.y + 5.0f * scaleIcon);
+            dl->AddLine( p1, p2, IM_COL32(255, 255, 255, 255), 2.0f);
+            dl->AddLine( p2, p3, IM_COL32(255, 255, 255, 255), 2.0f);
+        }
+        ImVec2 textPos(boxMax.x + spacing,pos.y + (totalSize.y - textSize.y) * 0.5f);
+        dl->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text),label);
+        ImGui::PopFont();
+        ImGui::PopID();
+        return ImGui::IsItemClicked();
+      }
+
+      static bool AddTextInput(const char* label,  char* value, size_t valueSize, ImFont* font, float fontSize, float textWidth = 512.0f ){
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+        ImGui::PushFont(font, fontSize);
+        ImGui::PushItemWidth(textWidth);
+        bool changed = ImGui::InputText(label, value, valueSize);
+        ImGui::PopItemWidth();
+        ImGui::PopFont();
+        ImGui::PopStyleVar();
+        return changed;
+      }
+
+      static bool AddSlider(const char* label, float* value, float min, float max, ImFont* font, float fontSize)
+      {
+        ImGui::PushFont(font, fontSize);
+        ImGui::PushStyleVar( ImGuiStyleVar_FrameRounding, 6.0f );
+        bool changed = ImGui::SliderFloat(label, value, min, max, "%.2f");
+        ImGui::PopStyleVar();
+        ImGui::PopFont();
+        return changed;
+      }
+
+      static bool AddDroplist(const char* label, int* selected, const std::vector<std::string>& options,ImFont* font, float fontSize)
+      {
+          if (options.empty())
+              return false;
+
+          *selected = (*selected >= 0 &&  *selected < static_cast<int>(options.size())) ? *selected : 0;
+          ImGui::PushFont(font, fontSize);
+          ImGui::PushStyleColor(ImGuiCol_FrameBg,ImVec4(0.10f, 0.10f, 0.14f, 1.0f));
+          ImGui::PushStyleColor(ImGuiCol_PopupBg,ImVec4(0.08f, 0.08f, 0.12f, 1.0f));
+          ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.35f, 0.30f, 0.65f, 1.0f));
+          ImGui::PushStyleVar( ImGuiStyleVar_FrameRounding, 6.0f);
+          bool changed = false;
+          if (ImGui::BeginCombo(label, options[*selected].c_str())){
+              for (int i = 0; i < static_cast<int>(options.size()); ++i){
+                  bool isSelected = (*selected == i);
+                  if (ImGui::Selectable(  options[i].c_str(), isSelected)){
+                      *selected = i;
+                      changed = true;
+                  }
+                  if (isSelected){
+                    ImGui::SetItemDefaultFocus();
+                  }
+              }
+              ImGui::EndCombo();
+          }
+          ImGui::PopStyleVar();
+          ImGui::PopStyleColor(3);
+          ImGui::PopFont();
+          return changed;
       }
 
       // Stylized jitter
