@@ -1,5 +1,20 @@
 [rexcrt]
+# Heap
 RtlAllocateHeap = 0x8217B898
 RtlFreeHeap = 0x8217C180
 RtlSizeHeap = 0x8217AB30
 RtlReAllocateHeap = 0x8217C468
+
+# Memory
+memset = 0x8255B530
+memmove = 0x8255BCF0
+memcpy = 0x8255D150
+memmove_s = 0x8255CC00
+
+# String
+strchr = 0x825603A0
+strrchr = 0x825611D0
+strstr = 0x825613D0
+strncmp = 0x82561C60
+_stricmp = 0x825601E0
+strcpy_s = 0x8255D000
