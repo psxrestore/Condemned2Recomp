@@ -66,6 +66,7 @@ namespace rex::input::condemned2input{
          void NativeKeyPress(std::vector<int32_t> keycodes, bool release = false);
          std::unordered_map<std::string, Bind> GetActiveBinds() { return activeBinds; }
 
+         static bool WatchEventCallback(void* userdata, SDL_Event* event);
          void SetMouseLookType( MouseLookType mouseMode ) { mouseLookType = mouseMode; }
          void SetMouseLookTypeFromString( std::string mouseMode );
          MouseLookType GetMouseLookType() { return mouseLookType; }
@@ -75,6 +76,7 @@ namespace rex::input::condemned2input{
          MouseBind MouseClick() { return mouse_clicks; }
          double GetAxisOverrideValue(uint32_t btn);
          double GetButtonOverrideValue(uint32_t btn);
+         void SetMouseWheelY(float newY, bool add = false) { if(add) { wheelY += newY; } else { wheelY = newY; } }
 
          void SetTuningControls( bool enabled ) { isTuning = enabled; }
          void SetMeleeControls( bool enabled ) { hasMeleeWeapon = enabled; }
@@ -112,6 +114,7 @@ namespace rex::input::condemned2input{
          double last_dy;
          double last_add_dx;
          double last_add_dy;
+         float wheelY;
 
          //Custom input
          bool isUsingCRT = false;

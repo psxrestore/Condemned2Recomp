@@ -47,8 +47,8 @@ REXCVAR_DEFINE_STRING(condemned2_input_tool_uv, "1", "Condemned 2/Input/Keyboard
 REXCVAR_DEFINE_STRING(condemned2_input_tool_camera, "2", "Condemned 2/Input/Keyboard", "Camera");
 REXCVAR_DEFINE_STRING(condemned2_input_tool_spectrometer, "3", "Condemned 2/Input/Keyboard", "Spectrometer");
 REXCVAR_DEFINE_STRING(condemned2_input_tool_gps, "4", "Condemned 2/Input/Keyboard", "GPS");
-REXCVAR_DEFINE_STRING(condemned2_input_tool_take_picture, "Mouse1, E, Enter", "Condemned 2/Input/Keyboard", "Shutter button for the camera.");
-REXCVAR_DEFINE_STRING(condemned2_input_zoom, "Mouse2, V", "Condemned 2/Input/Keyboard", "Camera zooms in, used for investigations and spectating");
+REXCVAR_DEFINE_STRING(condemned2_input_tool_take_picture, "Mouse1, E", "Condemned 2/Input/Keyboard", "Camera Shutter");
+REXCVAR_DEFINE_STRING(condemned2_input_zoom, "Mouse2, V", "Condemned 2/Input/Keyboard", "Camera Zoom");
 
 REXCVAR_DEFINE_STRING(condemned2_input_flashlight, "F", "Condemned 2/Input/Keyboard", "Flashlight");
 REXCVAR_DEFINE_STRING(condemned2_input_use, "E", "Condemned 2/Input/Keyboard", "Use");
@@ -56,8 +56,8 @@ REXCVAR_DEFINE_STRING(condemned2_input_check, "H", "Condemned 2/Input/Keyboard",
 REXCVAR_DEFINE_STRING(condemned2_input_objectives, "Tab", "Condemned 2/Input/Keyboard", "Current Objectives");
 
 // Mouse Settings
-REXCVAR_DEFINE_STRING(condemned2_input_mouse, "Mixed","Condemned 2/Input/Mouse", "Mouse Look Mode: Native (Needs low sensitivity!), Mixed (recommended), Disable").allowed({"Native", "Mixed", "Disable"});
-REXCVAR_DEFINE_DOUBLE(condemned2_input_mouse_sensitivity, 0.075, "Condemned 2/Input/Mouse", "Mouse Sensitivity (Raw Input)").range(0.01, 1.0);
+REXCVAR_DEFINE_STRING(condemned2_input_mouse, "Mixed","Condemned 2/Input/Mouse", "Mouse Look Mode").allowed({"Native", "Mixed", "Disable"});
+REXCVAR_DEFINE_DOUBLE(condemned2_input_mouse_sensitivity, 0.075, "Condemned 2/Input/Mouse", "Mouse Sensitivity").range(0.01, 1.0);
 
 REXCVAR_DEFINE_BOOL(condemned2_input_debug, false, "Condemned 2/Debug", "Toggle logging for all input.");
 REXCVAR_DEFINE_BOOL(condemned2_input_frame_debug, false, "Condemned 2/Debug", "Toggle logging for input per frame.");
@@ -80,6 +80,7 @@ REX_EXTERN(__imp__IsMeleeWeapon); // Checks if player's current weapon is a mele
 namespace rex::input::condemned2input {
   namespace {constexpr rex::input::DeviceId kDevice = static_cast<rex::input::DeviceId>(0x4E4F5000); constexpr uint32_t kInputManager = 0x4005ae70; constexpr uint32_t kInputManagerCRT = 0x200afcc0;}
   Condemned2InputDriver* g_condemned2_input_driver = nullptr;
+
   Condemned2InputDriver::Condemned2InputDriver(rex::ui::Window* window, size_t window_z_order) : InputDriver(window, window_z_order) {
     REXLOG_INFO("[condemned2_input] Starting...");
     g_condemned2_input_driver = this;
@@ -125,9 +126,14 @@ namespace rex::input::condemned2input {
     rex::cvar::RegisterChangeCallback("condemned2_input_frame_debug", [&](std::string_view name, std::string_view new_value) {
       isDebuggingFrames = ( new_value == "true" ? true : false );
     });
+
+    // Register once:
+    SDL_AddEventWatch(&Condemned2InputDriver::WatchEventCallback, NULL);
   }
 
-  Condemned2InputDriver::~Condemned2InputDriver() = default;
+  Condemned2InputDriver::~Condemned2InputDriver(){
+    SDL_RemoveEventWatch(&Condemned2InputDriver::WatchEventCallback, this);
+  }
 
   X_STATUS Condemned2InputDriver::Setup() {
     return X_STATUS_SUCCESS;
@@ -315,18 +321,7 @@ namespace rex::input::condemned2input {
       });
     }
 
-    //Mouse wheel events
-    float wheelY = 0;
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      switch (event.type) {
-        case SDL_EVENT_MOUSE_WHEEL:
-          wheelY += event.wheel.y;
-        break;
-      }
-    }
-
-    // Mouse look
+    //Mouse events
     float dx = 0.0f, dy = 0.0f;
     if(!isDialogOpen){ // Don't allow mouse movement when dialogs are open!
       SDL_GetRelativeMouseState(&dx, &dy);
@@ -431,11 +426,21 @@ namespace rex::input::condemned2input {
     }
     
     //Update controller
+    g_condemned2_input_driver->SetMouseWheelY(0);
     packet_number_++; // Increment input packet number
     if (out_state) {
       out_state->packet_number = packet_number_;
     }
     return X_ERROR_SUCCESS;
+  }
+  
+  bool SDLCALL Condemned2InputDriver::WatchEventCallback(void* userdata, SDL_Event* event){
+    switch (event->type) {
+      case SDL_EVENT_MOUSE_WHEEL:
+        g_condemned2_input_driver->SetMouseWheelY(event->wheel.y, true);
+      break;
+    }
+    return true;
   }
 
   //Custom bind system
