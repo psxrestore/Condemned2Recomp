@@ -37,6 +37,7 @@ This is a static recompilation of **Condemned 2: Bloodshot (Xbox 360)** for Nati
 | Check | `H` |
 | Current Objectives | `Tab` |
 | Pause | `Esc` |
+| PC Settings | `F1` |
 | Settings | `F4` |
 | Console | `` ` `` |
 
