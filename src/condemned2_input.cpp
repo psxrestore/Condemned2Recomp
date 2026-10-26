@@ -129,7 +129,7 @@ namespace rex::input::condemned2input {
     });
 
     // Register once:
-    SDL_AddEventWatch(&Condemned2InputDriver::WatchEventCallback, NULL);
+    SDL_AddEventWatch(&Condemned2InputDriver::WatchEventCallback, this);
   }
 
   Condemned2InputDriver::~Condemned2InputDriver(){
@@ -462,7 +462,11 @@ namespace rex::input::condemned2input {
       if (b.mouseMask && SDL_GetMouseState(nullptr, nullptr) & b.mouseMask){
         return true;
       }
-      const bool* state = SDL_GetKeyboardState(nullptr);
+      int keyCount = 0;
+      const bool* state = SDL_GetKeyboardState(&keyCount);
+      if(!state  || keyCount <= 0 ){
+        return false;
+      }
       for (SDL_Scancode k : b.keys) {
         if(k != SDL_SCANCODE_UNKNOWN && state[k]) return true;
       }
@@ -478,23 +482,27 @@ namespace rex::input::condemned2input {
 
   void Condemned2InputDriver::Held( std::initializer_list<std::reference_wrapper<Bind>> binds, std::vector<int32_t> keycodes, bool down, bool pressed) {
     for ( Bind& bind : binds) {
+      bool capturedBind = false;
       if((!IsDown(bind) || down ) && bind.prev){
         NativeKeyPress(keycodes, true);
+        capturedBind = true;
       }
       if(Pressed(bind) || pressed ){
         NativeKeyPress(keycodes);
         bind.prev = true;
+        capturedBind = true;
       } 
-      if(!down && pressed) return;
+      if(capturedBind) return;
     }
   }
 
   // Native key presses in Condemned 2!
   void Condemned2InputDriver::NativeKeyPress(std::vector<int32_t> keycodes, bool release ){
+    uint32_t keyManager = GetInputManager();
     for (int32_t k : keycodes) {
-      PressBind(GetInputManager(), k);
+      PressBind(keyManager, k);
       if(!release){
-        HoldBind(GetInputManager(), k);
+        HoldBind(keyManager, k);
       }
     }
   }
