@@ -186,6 +186,7 @@ namespace Condemned2 {
         }
         if (p != nullptr) {
             if (g_condemned2_assets->IsAdditionalBundle(p)) {
+                g_condemned2_assets->AddLoadedBundle(p, 0);
                 g_condemned2_assets->SetCurrentBundle(p);
                 g_condemned2_assets->SetCanLoadBundle(true);
             }else{
@@ -201,10 +202,8 @@ namespace Condemned2 {
         __imp__Game_LoadExtResource(ctx, base);
         const char* p = g_condemned2_assets->GetHook()->GetMemory()->TranslateVirtual<const char*>(name_g); 
         if(p != nullptr){
-            if(g_condemned2_assets->IsLoadingBundle()){
-                if( std::strstr(p, "arsenal") != nullptr ){
-                    ctx.r3.u32 = 0;
-                }
+            if(g_condemned2_assets->IsResourceLoaded(p)){
+                ctx.r3.u32 = 0;
             }
             if(ctx.r3.u32 == 1){
                 if(g_condemned2_assets->IsDebuggingResources() ){
