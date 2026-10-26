@@ -34,11 +34,15 @@ namespace rex::graphics::condemned2graphics{
          int GetShadowLOD() { return _shadowLOD; }
          int GetMinShadowLOD() { return _minShadowLOD; }
 
+         //Framerate
+         bool GetUnlockedFramerate() { return unlockedFrameRate; }
+
       private:
          Condemned2::Condemned2Hook *_hook;
 
          std::pair<int,int> _screenResolution = { 1280, 720 };
          int _shadowLOD = -1;
          int _minShadowLOD = -1;
+         bool unlockedFrameRate;
    };
 }  // namespace rex::graphics::condemned2graphics

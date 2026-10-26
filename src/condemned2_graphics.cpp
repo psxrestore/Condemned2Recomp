@@ -54,6 +54,7 @@
 REXCVAR_DEFINE_DOUBLE(condemned2_fov, 1.0, "Condemned 2/Graphics", "Camera Fov").range(0.75f, 1.25f);
 REXCVAR_DEFINE_BOOL(condemned2_screen_effects, true, "Condemned 2/Graphics", "Screen Effects");
 REXCVAR_DEFINE_BOOL(condemned2_snow_effects, true, "Condemned 2/Graphics", "Snow Effects");
+REXCVAR_DEFINE_BOOL(condemned2_unlock_framerate, true, "Condemned 2/Graphics", "Unlock Framerate");
 REXCVAR_DEFINE_STRING(condemned2_shadow_quality, "High","Condemned 2/Graphics", "Shadow Quality").allowed({"Native", "Low", "Medium", "High"});
 
 //Externs
@@ -102,12 +103,19 @@ namespace rex::graphics::condemned2graphics {
         });
         _screenResolution = GetScreenResolutionFromString(REXCVAR_GET(condemned2_native_resolution));*/
 
+        //Shadow Effects
         rex::cvar::RegisterChangeCallback("condemned2_shadow_quality", [&](std::string_view name, std::string_view new_value) {
             _minShadowLOD = GetMinShadowLODFromString(std::string( new_value ));
             _shadowLOD = GetShadowLODFromString(std::string( new_value ));
         });
         _minShadowLOD = GetMinShadowLODFromString(REXCVAR_GET(condemned2_shadow_quality));
         _shadowLOD = GetShadowLODFromString(REXCVAR_GET(condemned2_shadow_quality));
+
+        //Unlock framerate
+        rex::cvar::RegisterChangeCallback("condemned2_unlock_framerate", [&](std::string_view name, std::string_view new_value) {
+            unlockedFrameRate = (new_value == "true");
+        });
+        unlockedFrameRate = (rex::cvar::GetFlagByName("condemned2_unlock_framerate") == "true");
     }
 
     //Level of Detail
@@ -185,5 +193,7 @@ void Set_Video_Height(PPCRegister& param_1) {
     param_1.s64 = res.second;
 }
 void Unlock_Framerate(PPCRegister& param_1) {
-    param_1.f64 = static_cast<double>(1.0f/240.0f);
+    if(rex::graphics::condemned2graphics::g_condemned2_graphics->GetUnlockedFramerate()){
+        param_1.f64 = static_cast<double>(1.0f/240.0f);
+    }
 }

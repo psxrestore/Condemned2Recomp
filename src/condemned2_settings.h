@@ -26,7 +26,7 @@ namespace Condemned2 {
 
         private:
             inline static const std::string _title = "Condemned 2: Bloodshot"; // Window title
-            inline static const std::string _version = "0.5.0"; // Application version
+            inline static const std::string _version = "0.5.1"; // Application version
             inline static const std::vector<ConfigSetting> _requiredSettings = { // Required Settings 
                 //DX12
                 {"render_target_path_d3d12","rtv"}, 
@@ -39,12 +39,8 @@ namespace Condemned2 {
                 {"vulkan_async_skip_incomplete_frames", "false"},
                 //{"async_shader_compilation", "false"},
                 //Texture cache
-                {"texture_cache_memory_limit_render_to_texture","256"},
-                {"texture_cache_memory_limit_soft","4096"},
-                {"texture_cache_memory_limit_hard","8192"},
-                {"texture_cache_memory_limit_soft_lifetime","3600"},
                 //Other
-                {"audio_maxqframes","16"}, // Increasing might reduce performance
+                {"audio_maxqframes","16"},
                 {"readback_memexport", "false"}, 
                 {"clear_memory_page_state", "true"}, //"false"}, //Required for RexCRT at times! Otherwise, disable for CPU performance!
                 {"execute_unclipped_draw_vs_on_cpu", "true"}, // Fixes black screen issue for RTV render target path in Condemned 2.
@@ -58,7 +54,7 @@ namespace Condemned2 {
                 {"anisotropic_override", "5"},
                 {"resolution_scale", "2"},
                 //Vsync
-                {"vsync","true"},
+                {"vsync","false"},
                 {"video_mode_refresh_rate","60"},
                 //PC Controls
                 {"input_backend","sdl"},

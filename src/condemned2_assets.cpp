@@ -324,7 +324,6 @@ namespace Condemned2 {
         const std::string file_name = g_condemned2_assets->GetFilenameFromPath(name_h);
         const std::string name_s = g_condemned2_assets->GetBundlePath(file_name);
         if (!name_s.empty()){
-            REXLOG_INFO("[condemned2_hooks][Game_InitWorldObject] Loading resources for: {}", name_s);
             g_condemned2_assets->LoadAdditionalBundle(ctx, base, name_s);
         }
         if(g_condemned2_assets->IsDebugging()){
