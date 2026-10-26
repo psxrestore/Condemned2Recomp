@@ -1,13 +1,3 @@
-# Keeps codegen cleaner, and resolves some issues!
-skip_lr = true
-skip_msr = true
-ctr_as_local = true
-xer_as_local = true
-cr_as_local = true
-reserved_as_local = true
-non_argument_as_local = true
-non_volatile_as_local = true
-
 # Condemned2Recomp Functions (Title Update Version)
 [functions]
 0x82201590 = {}

@@ -42,6 +42,7 @@
 0x8234C130 = {name="Input_KeyDown"}
 0x8234BEC0 = {name="Input_KeyUp"}
 0x8234BF28 = {name="Input_KeyHold"}
+0x8232CDD8 = {name="Input_PlayerConnected"}
 0x82315438 = {name="Input_PlayerInput"}
 0x82874E28 = {name="Input_OnAttackLanded"}
 0x82425158 = {name="AimingSensitivity"} # Aiming sensitivity setting
