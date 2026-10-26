@@ -36,29 +36,8 @@ namespace Condemned2{
 
         bool LoadAdditionalBundle(PPCContext& ctx, uint8_t* base, const std::string& bundlePath );
         void LoadAdditionalBundles(PPCContext& ctx, uint8_t* base);
-        //void ReleaseBundle(PPCContext& ctx,uint8_t* base,uint32_t handle) ;
-
-        bool IsAdditionalBundle(std::string filename){
-            std::transform(filename.begin(), filename.end(), filename.begin(), [](unsigned char c){ return std::tolower(c); });
-            const std::size_t bndlStr = filename.find(".bndl"); // Load after wldsrvr files
-            if (bndlStr == std::string::npos)
-                return false;
-            
-            static constexpr std::array<const char*, 5> excludedBundles =
-            {
-                "interface\\common.bndl",
-                "interface\\extras.bndl",
-                "interface\\mpworldload.bndl",
-                "interface\\startup.bndl",
-                "interface\\shell.bndl"
-            };
-            for (const char* excluded : excludedBundles)
-            {
-                if (filename == excluded)
-                    return false;
-            }
-            return true;
-        }
+        //void ReleaseBundle(PPCContext& ctx,uint8_t* base,uint32_t handle);
+        bool IsAdditionalBundle(std::string filename);
 
         // Resources
         void AddLoadedResource( std::string res ){ loadedAssets[res] = currentBundle; }

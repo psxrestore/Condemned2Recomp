@@ -129,6 +129,28 @@ namespace Condemned2 {
         SetLoadingBundle(false);
     }
 
+    bool Condemned2Assets::IsAdditionalBundle(std::string filename){
+        std::transform(filename.begin(), filename.end(), filename.begin(), [](unsigned char c){ return std::tolower(c); });
+        const std::size_t bndlStr = filename.find(".bndl"); // Load after wldsrvr files
+        if (bndlStr == std::string::npos)
+            return false;
+        
+        static constexpr std::array<const char*, 5> excludedBundles =
+        {
+            "interface\\common.bndl",
+            "interface\\extras.bndl",
+            "interface\\mpworldload.bndl",
+            "interface\\startup.bndl",
+            "interface\\shell.bndl"
+        };
+        for (const char* excluded : excludedBundles)
+        {
+            if (filename == excluded)
+                return false;
+        }
+        return true;
+    }
+
     /*void Condemned2Assets::ReleaseBundle(PPCContext& ctx,uint8_t* base,uint32_t handle) {
         if (handle == 0) {
             return;
@@ -202,9 +224,6 @@ namespace Condemned2 {
         __imp__Game_LoadExtResource(ctx, base);
         const char* p = g_condemned2_assets->GetHook()->GetMemory()->TranslateVirtual<const char*>(name_g); 
         if(p != nullptr){
-            if(g_condemned2_assets->IsResourceLoaded(p)){
-                ctx.r3.u32 = 0;
-            }
             if(ctx.r3.u32 == 1){
                 if(g_condemned2_assets->IsDebuggingResources() ){
                     REXLOG_INFO("[Game_LoadExtResource] this={:#x} lr={:#x} name_address={:#x} name={}", self, ctx.lr, name_g, p);
@@ -220,7 +239,7 @@ namespace Condemned2 {
             REXLOG_INFO("[Game_ProcessBundle] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g);
         }
         __imp__Game_ProcessBundle(ctx, base);
-       g_condemned2_assets->LoadAdditionalBundles(ctx, base);
+        g_condemned2_assets->LoadAdditionalBundles(ctx, base);
     }
 
     //Object/Model Initialization
