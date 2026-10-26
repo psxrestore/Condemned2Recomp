@@ -218,8 +218,10 @@ namespace Condemned2 {
         while (!loadedBundles.empty()) {
             auto it = loadedBundles.begin();
             const auto bundleHandle = it->second;
-            g_condemned2_assets->ReleaseBundle(ctx, base, bundleHandle);
-            loadedBundles.erase(it);
+            if(bundleHandle != 0){
+                g_condemned2_assets->ReleaseBundle(ctx, base, bundleHandle);
+                loadedBundles.erase(it);
+            }
         }
     }
  
