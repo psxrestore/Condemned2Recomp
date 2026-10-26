@@ -931,8 +931,9 @@ namespace Condemned2 {
         }
         if (subCategory.find("Graphics") != std::string::npos) {
           category.push_back("resolution_scale");
-          category.push_back("vsync");
           category.push_back("native_2x_msaa");
+          category.push_back("vsync");
+          category.push_back("video_mode_refresh_rate");
         }
         //auto category = rex::cvar::ListFlagsByCategory(subCategory);
         for (const std::string& cvarName : category) {
