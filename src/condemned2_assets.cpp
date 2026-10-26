@@ -43,13 +43,64 @@ REXCVAR_DEFINE_BOOL(condemned2_loaded_assets_debug, true, "Condemned 2/Debug", "
 namespace Condemned2 {
     namespace{
         constexpr uint32_t kEnginePtr = 0x82932814;
-        //constexpr uint32_t kReleaseResource  = 0x821B1010;//0x821C0D50
+        constexpr uint32_t kReleaseResource  = 0x821B1010;//0x821C0D50
         constexpr uint32_t kGetManagerOffset = 0x14;
         constexpr uint32_t kLoadBundleOffset = 0x68;
-        const std::vector<std::string> bundlePaths = {
-            //These contain majority of the weapons in-game
-            R"(Worlds\SP\Mission_06\M06_0000.bndl)",
-            R"(Worlds\SP\Mission_08\M08_0000.bndl)",
+        const std::vector<std::string> bundlePaths = {};
+
+       const std::unordered_map<std::string, std::string> bundleAliases = {
+            { "2x4_nails.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "ac_support.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "baseball_bat.mdl", R"(Worlds\fc\fc_practice_0000.bndl)" },
+            { "baton.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "battleaxe.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "battleaxe_2h.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "beaker_stand.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "bedpost.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "bowling_ball.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "bowling_pin.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "brace.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "brick.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "broadsword.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "crowbar.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "crutch.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "deer_antler.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "fire_poker.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "fireaxe.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "flashlight.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "frying_pan.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "golf_club.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "large_plank.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "large_wrench.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "meathook.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "pipe.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "pipe_elbow.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "prosthetic_arm.mdl", R"(Worlds\SP\Mission_01\m01_0000.bndl)" },
+            { "rebar_bent.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "rebar_straight.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "rip_hammer.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "sledgehammer.mdl", R"(Worlds\FC\fc_brawler_0000.bndl)" },
+            { "shovel.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "short_sword.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "taxidermy_knife.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "tire_iron.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "war_hammer.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "assault_rifle.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "colt45.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "combat_shotgun.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "crossbow.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "crossbow_museum.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "doublebarrel.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "handgun_44.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "handgun_9mm.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "nail_gun.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "pistol_22.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "revolver_38.mdl", R"(Worlds\fc\fc_practice_0000.bndl)" },
+            { "rifle_lever.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "shotgun_pump.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "special_crossbow.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "spraycan.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "subgun.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
         };
     }
     Condemned2Assets* g_condemned2_assets = nullptr;
@@ -151,7 +202,7 @@ namespace Condemned2 {
         return true;
     }
 
-    /*void Condemned2Assets::ReleaseBundle(PPCContext& ctx,uint8_t* base,uint32_t handle) {
+    void Condemned2Assets::ReleaseBundle(PPCContext& ctx,uint8_t* base,uint32_t handle) {
         if (handle == 0) {
             return;
         }
@@ -160,7 +211,34 @@ namespace Condemned2 {
             return;
         }
         hook->CallIndirectFunction(ctx, base, kReleaseResource, handle);
-    }*/
+    }
+
+    void Condemned2Assets::UnloadBundles(PPCContext& ctx,uint8_t* base) {
+        auto& loadedBundles = g_condemned2_assets->GetLoadedBundles();
+        while (!loadedBundles.empty()) {
+            auto it = loadedBundles.begin();
+            const auto bundleHandle = it->second;
+            g_condemned2_assets->ReleaseBundle(ctx, base, bundleHandle);
+            loadedBundles.erase(it);
+        }
+    }
+ 
+    std::string Condemned2Assets::GetBundlePath(const std::string& name) {
+        for (const auto& [key, path] : bundleAliases) {
+            if (name.find(key) != std::string::npos) {
+                return path;
+            }
+        }
+        return {};
+    }
+
+    std::string Condemned2Assets::GetFilenameFromPath(const std::string& path) {
+        const std::size_t separator = path.find_last_of(R"(/\)");
+        if (separator == std::string::npos) {
+            return path;
+        }
+        return path.substr(separator + 1);
+    }
 
     REX_HOOK_RAW(Game_LoadStartingBundle) {
         if(g_condemned2_assets->IsDebugging()){
@@ -179,13 +257,6 @@ namespace Condemned2 {
             uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32, unk = ctx.r5.u64; 
             REXLOG_INFO("[Game_StartReadingAssets] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g );
         }
-        /*auto& loadedBundles = g_condemned2_assets->GetLoadedBundles();
-        while (!loadedBundles.empty()) {
-            auto it = loadedBundles.begin();
-            const auto bundleHandle = it->second;
-            g_condemned2_assets->ReleaseBundle(ctx, base, bundleHandle);
-            loadedBundles.erase(it);
-        }*/
         g_condemned2_assets->ClearLoadedBundles();
         g_condemned2_assets->ClearLoadedResources();
         __imp__Game_StartReadingAssets(ctx, base);
@@ -216,6 +287,7 @@ namespace Condemned2 {
             }
         }
         __imp__Game_ReadAsset(ctx, base);
+        g_condemned2_assets->UnloadBundles(ctx, base);
     }
 
     //Resources verified as bundles are parsed and loaded.
@@ -248,9 +320,15 @@ namespace Condemned2 {
     }
 
     REX_HOOK_RAW(Game_InitWorldObject) {
+        uint32_t name_g = ctx.r4.u32;
+        const char* name_h = g_condemned2_assets->GetHook()->GetMemory()->TranslateVirtual<const char*>(name_g);
+        const std::string file_name = g_condemned2_assets->GetFilenameFromPath(name_h);
+        const std::string name_s = g_condemned2_assets->GetBundlePath(file_name);
+        if (!name_s.empty()){
+            REXLOG_INFO("[condemned2_hooks][Game_InitWorldObject] Loading resources for: {}", name_s);
+            g_condemned2_assets->LoadAdditionalBundle(ctx, base, name_s);
+        }
         if(g_condemned2_assets->IsDebugging()){
-            uint32_t name_g = ctx.r4.u32;
-            const char* name_h = g_condemned2_assets->GetHook()->GetMemory()->TranslateVirtual<const char*>(name_g);
             REXLOG_INFO("[condemned2_hooks][Game_InitWorldObject] this={:#x} name_address={:#x} name={}", ctx.r3.u32, name_g, name_h);
         }
         __imp__Game_InitWorldObject(ctx, base);

@@ -33,10 +33,12 @@ namespace Condemned2{
 
         void SetCurrentBundle(std::string bundle) { currentBundle = bundle; }
         std::string GetCurrentBundle() { return currentBundle; }
-
+        std::string GetBundlePath(const std::string& name);
+        std::string GetFilenameFromPath(const std::string& path);
         bool LoadAdditionalBundle(PPCContext& ctx, uint8_t* base, const std::string& bundlePath );
         void LoadAdditionalBundles(PPCContext& ctx, uint8_t* base);
-        //void ReleaseBundle(PPCContext& ctx,uint8_t* base,uint32_t handle);
+        void ReleaseBundle(PPCContext& ctx,uint8_t* base,uint32_t handle);
+        void UnloadBundles(PPCContext& ctx,uint8_t* base);
         bool IsAdditionalBundle(std::string filename);
 
         // Resources
