@@ -38,11 +38,12 @@ REXCVAR_DEFINE_STRING(condemned2_cmd, "", "Condemned 2/Extras/Console", "In-game
 REXCVAR_DEFINE_STRING(condemned2_msg, "", "Condemned 2/Extras/Console", "Manager Console.");
 //Weapon Spawner
 REXCVAR_DEFINE_STRING(condemned2_weapon_spawner, "None","Condemned 2/Extras/Unlockables", "Weapon Spawner").allowed({ //Values found in yeti.gamedb!
-    "None", "Baseball_Bat", "Baton", "BattleAxe", "Brick", "Broadsword", "Cleaver", "Crowbar", "FireAxe",
-    "Flashlight", "Golf_Club","Handgun_22", "Handgun_38", "Handgun_44", "Handgun_9mm", "Large_Wrench", 
-    "Paper_Cutter", "Pipe", "Pipe_Lever", "Pipe_Steam", "Rebar_Bent", "Rebar_Straight", "Rip_Hammer", 
-    "Rifle_Assault", "Rifle_Lever", "Shotgun_Double", "Shotgun_Pump", "Shotgun_Riot", "Special_Crossbow", 
-    "Subgun_Street", "Saw_Lollypop", "Short_Sword", "Shovel", "Skull", "Sledgehammer", "Tire_Iron", "War_Hammer"
+    "None", "Baseball_Bat", "Baton", "BattleAxe", "Brace", "Brick", "Bowling_Ball", "Broadsword", "Cleaver", "Crowbar", 
+    "Crutch", "FireAxe", "fire_poker", "Flashlight", "Frying_Pan", "Golf_Club","Handgun_22", "Handgun_38", "Handgun_44", 
+    "Handgun_9mm", "Large_Wrench", "Meat_Hook", "Paper_Cutter", "Pipe", "Pipe_Lever", "Pipe_Steam", "Prosthetic_Arm",
+    "Rebar_Bent", "Rebar_Straight", "Rip_Hammer", "Rifle_Assault", "Rifle_Lever", "Shotgun_Double", "Shotgun_Pump", 
+    "Shotgun_Riot", "Special_Crossbow", "Special_Crossbow_NoExplode", "Subgun_Street", "Saw_Lollypop", "Short_Sword", 
+    "Shovel", "Skull", "Sledgehammer", "taxidermy_knife", "Tire_Iron", "War_Hammer"
 });
 
 //Rex Cvars
