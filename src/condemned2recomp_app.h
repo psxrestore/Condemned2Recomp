@@ -22,7 +22,6 @@
 #include <condemned2_input.h>
 #include <condemned2_assets.h>
 #include <condemned2_cheats.h>
-#include <condemned2_fixes.h>
 #include <suite/curl_getter.h>
 #include <ui/condemned2_launcher.h>
 
@@ -40,7 +39,6 @@ namespace Condemned2 {
                 _graphics = new rex::graphics::condemned2graphics::Condemned2Graphics(_hooks);
                 _assets = new Condemned2::Condemned2Assets(_hooks);
                 _cheats = new Condemned2::Condemned2Cheats(_hooks);
-                _fixes = new Condemned2::Condemned2Fixes(_hooks);
 
                 config.gpu_plugin = "xenos";
                 config.input_factory = REX_INPUT_BACKEND(rex::input::condemned2input::CreateInputSystem);
@@ -184,7 +182,7 @@ namespace Condemned2 {
             Condemned2::Condemned2Hook *_hooks;
             Condemned2::Condemned2Cheats *_cheats;
             Condemned2::Condemned2Assets *_assets;
-            Condemned2::Condemned2Fixes *_fixes;
+
             std::unordered_map<std::string, ImFont*> loadedFonts;
             std::unique_ptr<GameLauncherDialog> _launcherDialog;
             rex::PathConfig defaultPaths;
