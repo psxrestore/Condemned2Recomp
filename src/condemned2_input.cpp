@@ -73,6 +73,7 @@ REX_EXTERN(__imp__Input_GetButton);
 REX_EXTERN(__imp__Input_GetAxis);
 REX_EXTERN(__imp__Input_PlayerInput);
 REX_EXTERN(__imp__Input_OnAttackLanded);
+REX_EXTERN(__imp__Input_InHud);
 REX_IMPORT(Input_KeyDown, PressBind, uint32_t(uint32_t, uint32_t));
 REX_IMPORT(Input_KeyHold, HoldBind, uint32_t(uint32_t, uint32_t));
 
@@ -345,19 +346,38 @@ namespace rex::input::condemned2input {
     Held({activeBinds["menu_nav_left"], activeBinds["condemned2_input_move_left"]}, {0x84, 0x8d} );
 
     // Commands
-    Held({activeBinds["condemned2_input_use"], activeBinds["menu_enter"]}, {
-      //Submit menu confirm
-      0xa6,
-      0x5b,
-      //Menu confirm
-      0x87,
-      0xb5,
-      0xa7, //In-game menu confirm
-      0xb7, // Used for dialogs in fight club
-      0xba, // Close tutorial dialogs
-      0x57,  // Use action
-      0x5d // Choose investigation choice
-    } );
+    if(IsInMenu()){
+      if(Pressed(activeBinds["condemned2_input_use"]) || Pressed(activeBinds["menu_enter"])){ //buttons |= X_INPUT_GAMEPAD_B;
+        NativeKeyPress(
+          //Submit menu confirm
+          0xa6,
+          0x5b,
+          //Menu confirm
+          0x87,
+          0xb5,
+          0xa7, //In-game menu confirm
+          0xb7, // Used for dialogs in fight club
+          0xba, // Close tutorial dialogs
+          0x57,  // Use action
+          0x5d // Choose investigation choice
+        });
+      }
+    }else{
+      Held({activeBinds["condemned2_input_use"], activeBinds["menu_enter"]}, {
+        //Submit menu confirm
+        0xa6,
+        0x5b,
+        //Menu confirm
+        0x87,
+        0xb5,
+        0xa7, //In-game menu confirm
+        0xb7, // Used for dialogs in fight club
+        0xba, // Close tutorial dialogs
+        0x57,  // Use action
+        0x5d // Choose investigation choice
+      } );
+    }
+
     if(Pressed(activeBinds["menu_go_back"])){ //buttons |= X_INPUT_GAMEPAD_B;
       NativeKeyPress({
         0x88,
@@ -631,6 +651,10 @@ namespace rex::input::condemned2input {
   }
 
   //Input Event Functions
+  REX_HOOK_RAW(Input_InHud){
+    __imp__Input_InHud(ctx,base);
+    g_condemned2_input_driver->SetMenuMode(ctx.r3.u32 == 0);
+  }
   REX_HOOK_RAW(Input_GetAxis) {
     uint32_t newID = ctx.r4.u32;
     double newValue = GetAxisOverrideValue(newID);
@@ -669,7 +693,7 @@ namespace rex::input::condemned2input {
       ctx.r3.u64 = newValue;
     }
     if(g_condemned2_input_driver->IsDebuggingFrames()){
-      REXLOG_INFO("[condemned2_input][Input_GetButton] {:#x} {:#x} {}", temp, tempB, ctx.r3.u64);
+      REXLOG_INFO("[condemned2_input][Input_GetButton] {:#x} {:#x} {:#x} {}", temp, tempB, ctx.lr, ctx.r3.u64);
     }
   }
   REX_HOOK_RAW(Input_PlayerInput){

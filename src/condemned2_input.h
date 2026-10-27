@@ -89,6 +89,7 @@ namespace rex::input::condemned2input{
          bool IsUsingMeleeWeapon() { return hasMeleeWeapon; }
          bool IsInMenu() { return isInMenu; }
          bool IsUsingPCControls() { return isUsingPCControls; }
+         
          bool IsDebugging() { return isDebugging; }
          bool IsDebuggingFrames() { return isDebuggingFrames; } 
       private:
