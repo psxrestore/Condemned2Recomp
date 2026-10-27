@@ -38,7 +38,7 @@ namespace Condemned2 {
                 _hooks = new Condemned2::Condemned2Hook();
                 _graphics = new rex::graphics::condemned2graphics::Condemned2Graphics(_hooks);
                 _assets = new Condemned2::Condemned2Assets(_hooks);
-                _cheats = new Condemned2::Condemned2Cheats(_hooks);
+                _cheats = new Condemned2::Condemned2Cheats(_hooks, _assets);
 
                 config.gpu_plugin = "xenos";
                 config.input_factory = REX_INPUT_BACKEND(rex::input::condemned2input::CreateInputSystem);

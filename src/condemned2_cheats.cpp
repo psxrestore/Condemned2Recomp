@@ -19,6 +19,7 @@
 
 #include <condemned2_cheats.h>
 #include <condemned2_hooks.h>
+#include <condemned2_assets.h>
 
 REX_EXTERN(__imp__Unlockables_Levels);
 REX_EXTERN(__imp__Unlockables_Upgrades);
@@ -37,7 +38,7 @@ REXCVAR_DEFINE_BOOL(condemned2_qol_skip_ingame_movies, false, "Condemned 2/Extra
 REXCVAR_DEFINE_STRING(condemned2_cmd, "", "Condemned 2/Extras/Console", "In-game Console");
 REXCVAR_DEFINE_STRING(condemned2_msg, "", "Condemned 2/Extras/Console", "Manager Console.");
 //Weapon Spawner
-REXCVAR_DEFINE_STRING(condemned2_weapon_spawner, "None","Condemned 2/Extras/Unlockables", "Weapon Spawner").allowed({ //Values found in yeti.gamedb!
+REXCVAR_DEFINE_STRING(condemned2_default_weapon, "None","Condemned 2/Extras/Unlockables", "Starting Weapon").allowed({ //Values found in yeti.gamedb!
     "None", "Baseball_Bat", "Baton", "BattleAxe", "Brace", "Brick", "Bowling_Ball", "Broadsword", "Cleaver", "Crowbar", 
     "Crutch", "FireAxe", "fire_poker", "Flashlight", "Frying_Pan", "Golf_Club","Handgun_22", "Handgun_38", "Handgun_44", 
     "Handgun_9mm", "Large_Wrench", "Meat_Hook", "Paper_Cutter", "Pipe", "Pipe_Lever", "Pipe_Steam", "Prosthetic_Arm",
@@ -49,7 +50,7 @@ REXCVAR_DEFINE_STRING(condemned2_weapon_spawner, "None","Condemned 2/Extras/Unlo
 //Rex Cvars
 namespace Condemned2 {
     Condemned2Cheats* g_condemned2_cheats = nullptr;
-    Condemned2Cheats::Condemned2Cheats(Condemned2::Condemned2Hook *hook) : _hook(hook) {
+    Condemned2Cheats::Condemned2Cheats(Condemned2::Condemned2Hook *hook, Condemned2::Condemned2Assets *assets) : _hook(hook), _assets(assets){
         REXLOG_INFO("[condemned2cheats] Starting...");
         g_condemned2_cheats = this;
     }
@@ -92,14 +93,12 @@ namespace Condemned2 {
         _hook->SendCommandCmd("SkipIngameMovies", std::stod( Condemned2::Condemned2Hook::GetSafeString( rex::cvar::GetFlagByName("condemned2_qol_skip_ingame_movies") ) ) ); 
 
         //Weapon Spawner
-        rex::cvar::RegisterChangeCallback("condemned2_weapon_spawner", [&](std::string_view name, std::string_view new_value) {
+        rex::cvar::RegisterChangeCallback("condemned2_default_weapon", [&](std::string_view name, std::string_view new_value) {
             if(std::string(new_value) == "None")
                 return;
 
-            _hook->SendCommandCmd({_hook->AllocateHeapForString(std::format("msg Player (ACQUIREWEAPON {})", std::string(new_value)).c_str()), 0, 0, 0});
-            _hook->SendCommandCmd({_hook->AllocateHeapForString(std::format("msg Player (ACQUIREAMMO {})", std::string(new_value)).c_str()), 0, 0, 0});
-            REXLOG_INFO("[condemned2_graphics][condemned2_weapon_spawner] {}", std::string(new_value));
-            rex::cvar::SetFlagByName("condemned2_weapon_spawner", "None"); 
+            _assets->SetStartingWeapon(std::string(new_value));
+            REXLOG_INFO("[condemned2_graphics][condemned2_default_weapon] {}", std::string(new_value));
         });
 
         //Consoles

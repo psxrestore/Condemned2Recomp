@@ -10,11 +10,12 @@
 #include <string>
 
 #include <condemned2_hooks.h>
+#include <condemned2_assets.h>
 
 namespace Condemned2{
    class Condemned2Cheats  {
       public:
-        explicit Condemned2Cheats(Condemned2::Condemned2Hook *hook);
+        explicit Condemned2Cheats(Condemned2::Condemned2Hook *hook, Condemned2::Condemned2Assets *assets);
         ~Condemned2Cheats();
 
         void InitializeCheats();
@@ -34,6 +35,7 @@ namespace Condemned2{
 
       private:
         Condemned2::Condemned2Hook *_hook;
+        Condemned2::Condemned2Assets *_assets;
         bool hasAllUpgrades;
         bool hasAllLevelsUnlocked;
         bool hasTopGunEfficiency;

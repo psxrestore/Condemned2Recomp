@@ -35,6 +35,7 @@ REX_EXTERN(__imp__Game_LoadExtResource);
 REX_EXTERN(__imp__Game_ProcessBundle);
 REX_EXTERN(__imp__Game_InitWorldModel);
 REX_EXTERN(__imp__Game_InitWorldObject);
+REX_EXTERN(__imp__DefaultWeapon);
 
 REXCVAR_DEFINE_BOOL(condemned2_assets_debug, true, "Condemned 2/Debug", "Toggle logging for asset manager.");
 REXCVAR_DEFINE_BOOL(condemned2_loaded_assets_debug, true, "Condemned 2/Debug", "Toggle logging for loaded resources");
@@ -49,56 +50,50 @@ namespace Condemned2 {
         const std::vector<std::string> bundlePaths = {};
 
        const std::unordered_map<std::string, std::string> bundleAliases = {
-            { "2x4_nails.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
-            { "ac_support.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
-            { "baseball_bat.mdl", R"(Worlds\SP\Mission_09\M09_0000.bndl)" },
-            { "baton.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
-            { "battleaxe.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
-            { "battleaxe_2h.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
-            { "beaker_stand.mdl", R"(Worlds\SP\Mission_02\M02_0000.bndl)" },
-            { "bedpost.mdl", R"(Worlds\SP\Mission_02\M02_0000.bndl)" },
-            { "bowling_ball.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
-            { "bowling_pin.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
-            { "brace.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
-            { "brick.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
-            { "broadsword.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
-            { "crowbar.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
-            { "crutch.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
-            { "fire_poker.mdl", R"(Worlds\SP\Mission_07\M07_0000.bndl)" },
-            { "fireaxe.mdl", R"(Worlds\SP\Mission_11\M11_0000.bndl)" },
-            { "flashlight.mdl", R"(Worlds\SP\Mission_02\M02_0005.bndl)" },
-            { "frying_pan.mdl", R"(Worlds\SP\Mission_07\M07_0000.bndl)" },
-            { "golf_club.mdl", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
-            { "large_plank.mdl", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
-            { "large_wrench.mdl", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
-            { "meathook.mdl", R"(Worlds\MP\slaughterhouse_0000.bndl)" },
-            { "pipe.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
-            { "pipe_elbow.mdl", R"(Worlds\SP\Mission_11\M11_0000.bndl)" },
-            { "prosthetic_arm.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
-            { "rebar_bent.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
-            { "rebar_straight.mdl", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
-            { "rip_hammer.mdl", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
-            { "sledgehammer.mdl", R"(Worlds\MP\pipemoose_0000.bndl)" },
-            { "shovel.mdl", R"(Worlds\SP\Mission_09\M09_0000.bndl)" },
-            { "short_sword.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
-            { "taxidermy_knife.mdl", R"(Worlds\MP\slaughterhouse_0000.bndl)" },
-            { "tire_iron.mdl", R"(Worlds\SP\Mission_10\M10_0000.bndl)" },
-            { "war_hammer.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
-            { "assault_rifle.mdl", R"(Worlds\SP\Mission_05\M05_0000.bndl)" },
-            { "colt45.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
-            { "combat_shotgun.mdl", R"(Worlds\SP\Mission_05\M05_0000.bndl)" },
-            { "crossbow.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
-            { "crossbow_museum.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
-            { "doublebarrel.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
-            { "handgun_44.mdl", R"(Worlds\SP\Mission_07\M07_0000.bndl)" },
-            { "handgun_9mm.mdl", R"(Worlds\SP\Mission_05\M05_0000.bndl)" },
-            { "pistol_22.mdl", R"(Worlds\SP\Mission_05\M05_0000.bndl)" },
-            { "revolver_38.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
-            { "rifle_lever.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
-            { "saw_lollypop.mdl", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
-            { "shotgun_pump.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
-            { "special_crossbow.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
-            { "subgun.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "None", R"()" },
+            { "Baseball_Bat", R"(Worlds\SP\Mission_02\M02_0000.bndl)" },
+            { "Baton", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "BattleAxe", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "Brace", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
+            { "Brick", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
+            { "Bowling_Ball", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "Broadsword", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "Cleaver", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "Crowbar", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
+            { "Crutch", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
+            { "FireAxe", R"(Worlds\MP\farmmp_0000.bndl)" },
+            { "fire_poker", R"(Worlds\SP\Mission_07\M07_0000.bndl)" },
+            { "Flashlight", R"(Worlds\SP\Mission_02\M02_0005.bndl)" },
+            { "Frying_Pan", R"(Worlds\SP\Mission_07\M07_0000.bndl)" },
+            { "Golf_Club", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
+            { "Handgun_22", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "Handgun_38", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
+            { "Handgun_44", R"(Worlds\SP\Mission_07\M07_0000.bndl)" },
+            { "Handgun_9mm", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "Large_Wrench", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
+            { "Meat_Hook", R"(Worlds\MP\slaughterhouse_0000.bndl)" },
+            { "Pipe", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
+            { "Pipe_Lever", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "Pipe_Steam", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "Prosthetic_Arm", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
+            { "Rebar_Bent", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "Rebar_Straight", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
+            { "Rip_Hammer", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
+            { "Rifle_Assault", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "Rifle_Lever", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "Shotgun_Double", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "Shotgun_Pump", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
+            { "Shotgun_Riot", R"(Worlds\SP\Mission_07\M07_0000.bndl)" },
+            { "Special_Crossbow", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "Special_Crossbow_NoExplode", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "Subgun_Street", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "Saw_Lollypop", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
+            { "Short_Sword", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "Shovel", R"(Worlds\SP\Mission_02\M02_0000.bndl)" },
+            { "Sledgehammer", R"(Worlds\MP\slaughterhouse_0000.bndl)" },
+            { "taxidermy_knife", R"(Worlds\MP\slaughterhouse_0000.bndl)" },
+            { "Tire_Iron", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "War_Hammer", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
         };
     }
     Condemned2Assets* g_condemned2_assets = nullptr;
@@ -165,17 +160,6 @@ namespace Condemned2 {
         REXLOG_INFO("[Condemned2Assets] Load {} -> handle {:#x}",bundlePath,handle);
         AddLoadedBundle(bundlePath, handle);
         return true;
-    }
-
-    void Condemned2Assets::LoadAdditionalBundles(PPCContext& ctx, uint8_t* base) {
-        if ( !CanLoadBundle() ) {
-            return;
-        }
-        SetLoadingBundle(true);
-        for (const std::string& bundlePath : bundlePaths) {
-            LoadAdditionalBundle(ctx, base, bundlePath);
-        }
-        SetLoadingBundle(false);
     }
 
     bool Condemned2Assets::IsAdditionalBundle(std::string filename){
@@ -310,7 +294,6 @@ namespace Condemned2 {
             REXLOG_INFO("[Game_ProcessBundle] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g);
         }
         __imp__Game_ProcessBundle(ctx, base);
-        g_condemned2_assets->LoadAdditionalBundles(ctx, base);
     }
 
     //Object/Model Initialization
@@ -321,14 +304,27 @@ namespace Condemned2 {
     REX_HOOK_RAW(Game_InitWorldObject) {
         uint32_t name_g = ctx.r4.u32;
         const char* name_h = g_condemned2_assets->GetHook()->GetMemory()->TranslateVirtual<const char*>(name_g);
-        const std::string file_name = g_condemned2_assets->GetFilenameFromPath(name_h);
-        const std::string name_s = g_condemned2_assets->GetBundlePath(file_name);
-        if (!name_s.empty()){
-            g_condemned2_assets->LoadAdditionalBundle(ctx, base, name_s);
-        }
-        if(g_condemned2_assets->IsDebugging()){
-            REXLOG_INFO("[condemned2_hooks][Game_InitWorldObject] this={:#x} name_address={:#x} name={}", ctx.r3.u32, name_g, name_h);
+        if(name_h != nullptr){
+            if(g_condemned2_assets->IsDebugging()){
+                REXLOG_INFO("[condemned2_hooks][Game_InitWorldObject] this={:#x} name_address={:#x} name={}", ctx.r3.u32, name_g, name_h);
+            }
         }
         __imp__Game_InitWorldObject(ctx, base);
+    }
+
+    REX_HOOK_RAW(DefaultWeapon){
+        REXLOG_INFO("[condemned2_hooks][DefaultWeapon]");
+        std::string selectedWeapon = g_condemned2_assets->GetStartingWeapon();
+        const std::size_t wpnStr = selectedWeapon.find("None"); 
+        if (wpnStr == std::string::npos){
+            const std::string name_s = g_condemned2_assets->GetBundlePath(selectedWeapon);
+            g_condemned2_assets->LoadAdditionalBundle(ctx, base, name_s);
+            Condemned2Hook* hook = g_condemned2_assets->GetHook();
+            if (hook != nullptr) {
+                hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (ACQUIREWEAPON {})", selectedWeapon).c_str()), 0, 0, 0});
+                hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (ACQUIREAMMO {})", selectedWeapon).c_str()), 0, 0, 0});
+            }
+        }
+        __imp__DefaultWeapon(ctx, base);
     }
 }  // namespace Condemned2

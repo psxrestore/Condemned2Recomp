@@ -36,7 +36,6 @@ namespace Condemned2{
         std::string GetBundlePath(const std::string& name);
         std::string GetFilenameFromPath(const std::string& path);
         bool LoadAdditionalBundle(PPCContext& ctx, uint8_t* base, const std::string& bundlePath );
-        void LoadAdditionalBundles(PPCContext& ctx, uint8_t* base);
         void ReleaseBundle(PPCContext& ctx,uint8_t* base,uint32_t handle);
         void UnloadBundles(PPCContext& ctx,uint8_t* base);
         bool IsAdditionalBundle(std::string filename);
@@ -50,6 +49,10 @@ namespace Condemned2{
         bool IsDebugging() { return isDebugging; }
         bool IsDebuggingResources() { return isDebuggingResources; }
 
+        // Starting Weapon
+        void SetStartingWeapon(std::string key) { startingWeaponKey = key; }
+        std::string GetStartingWeapon() { return startingWeaponKey; }
+
       private:
         Condemned2::Condemned2Hook *_hook;
         std::unordered_map<std::string, std::string> loadedAssets;
@@ -59,5 +62,6 @@ namespace Condemned2{
         bool canLoadBundle = false;
         bool isDebugging = false;
         bool isDebuggingResources = false;
+        std::string startingWeaponKey;
    };
 }  // namespace Condemned2

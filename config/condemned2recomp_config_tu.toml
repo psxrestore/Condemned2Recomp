@@ -60,6 +60,7 @@
 0x82302DB0 = {name="IsMeleeWeapon"} # Checks if the player has a melee weapon
 0x824384F0 = {name="BodyCapFunction"} # Body capsule physics
 0x826A5508 = {name="OnAttackEffect"} # Seems to be involved in whether there's gore or just a decal.
+0x826A26D8 = {name="DefaultWeapon"}
 
 # Bundles
 0x82326D10 = {name="Game_InitBundles"}
