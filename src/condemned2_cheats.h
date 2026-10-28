@@ -20,7 +20,7 @@ namespace Condemned2{
 
         void InitializeCheats();
         Condemned2::Condemned2Hook *GetHook() { return _hook; }
-
+        Condemned2::Condemned2Assets *GetAssets() { return _assets; }
         bool HasAllUpgrades() { return hasAllUpgrades; }
         void SetHasAllUpgrades(bool enable) { hasAllUpgrades = enable; }
 
@@ -33,6 +33,9 @@ namespace Condemned2{
         bool IsGodModeActive() { return isGodModeActive; }
         void SetGodMode(bool enable ) { isGodModeActive = enable; }
 
+        void SetStartingWeapon(std::string key) { startingWeaponKey = key; }
+        std::string GetStartingWeapon() { return startingWeaponKey; }
+
       private:
         Condemned2::Condemned2Hook *_hook;
         Condemned2::Condemned2Assets *_assets;
@@ -40,5 +43,6 @@ namespace Condemned2{
         bool hasAllLevelsUnlocked;
         bool hasTopGunEfficiency;
         bool isGodModeActive;
+        std::string startingWeaponKey;
    };
 }  // namespace Condemned2

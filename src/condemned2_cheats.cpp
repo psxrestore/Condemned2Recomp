@@ -25,6 +25,7 @@ REX_EXTERN(__imp__Unlockables_Levels);
 REX_EXTERN(__imp__Unlockables_Upgrades);
 REX_EXTERN(__imp__GunAccuracyMultiplier);
 REX_EXTERN(__imp__RandomAccuracyKnockoff);
+REX_EXTERN(__imp__DefaultWeapon);
 
 //Cheats
 REXCVAR_DEFINE_BOOL(condemned2_cheat_fps_mode, false, "Condemned 2/Extras/Unlockables", "FPS Mode");
@@ -92,14 +93,15 @@ namespace Condemned2 {
         });
         _hook->SendCommandCmd("SkipIngameMovies", std::stod( Condemned2::Condemned2Hook::GetSafeString( rex::cvar::GetFlagByName("condemned2_qol_skip_ingame_movies") ) ) ); 
 
-        //Weapon Spawner
+        //Starting weapon
         rex::cvar::RegisterChangeCallback("condemned2_default_weapon", [&](std::string_view name, std::string_view new_value) {
             if(std::string(new_value) == "None")
                 return;
 
-            _assets->SetStartingWeapon(std::string(new_value));
+            SetStartingWeapon(std::string(new_value));
             REXLOG_INFO("[condemned2_graphics][condemned2_default_weapon] {}", std::string(new_value));
         });
+        SetStartingWeapon(rex::cvar::GetFlagByName("condemned2_default_weapon"));
 
         //Consoles
         rex::cvar::RegisterChangeCallback("condemned2_cmd", [&](std::string_view name, std::string_view new_value) {
@@ -157,5 +159,26 @@ namespace Condemned2 {
             return;
         }
         __imp__RandomAccuracyKnockoff(ctx, base);
+    }
+
+    REX_HOOK_RAW(DefaultWeapon){
+        REXLOG_INFO("[condemned2_hooks][DefaultWeapon]");
+        std::string selectedWeapon = g_condemned2_cheats->GetStartingWeapon();
+        const std::size_t wpnStr = selectedWeapon.find("None"); 
+        if (wpnStr == std::string::npos){
+            Condemned2Assets* assets = g_condemned2_cheats->GetAssets();
+            if (assets != nullptr ){
+                const std::string name_s = assets->GetBundlePathFromName(selectedWeapon);
+                if(!name_s.empty()){
+                    assets->LoadAdditionalBundle(ctx, base, name_s);
+                    Condemned2Hook* hook = g_condemned2_cheats->GetHook();
+                    if (hook != nullptr) {
+                        hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (ACQUIREWEAPON {})", selectedWeapon).c_str()), 0, 0, 0});
+                        hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (ACQUIREAMMO {})", selectedWeapon).c_str()), 0, 0, 0});
+                    }
+                }
+            }
+        }
+        __imp__DefaultWeapon(ctx, base);
     }
 }  // namespace Condemned2
