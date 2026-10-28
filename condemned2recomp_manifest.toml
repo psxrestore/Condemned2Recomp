@@ -13,4 +13,5 @@ includes = [
 	"config/condemned2recomp_config_tu.toml", # Named functions used for hooks
 	"config/condemned2recomp_config_midhooks.toml", # ASM Midhooks for Condemned2recomp
 	"config/condemned2recomp_config_tu_crt.toml", # Named functions used for RexCRT
+	"config/condemned2recomp_config_tu_other.toml", # Named functions used for RexCRT
 ]

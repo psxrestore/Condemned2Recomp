@@ -16,5 +16,4 @@ strchr = 0x825603A0
 strrchr = 0x825611D0
 strstr = 0x825613D0
 strncmp = 0x82561C60
-_stricmp = 0x825601E0
 strcpy_s = 0x8255D000

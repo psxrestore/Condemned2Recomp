@@ -343,6 +343,18 @@ namespace Condemned2 {
         return temp;
     }
 
+    //Memory/String functions
+    //Seems like was failing to catch trailing null characters
+    int32_t __stricmp(const uint8_t* lhs,const uint8_t* rhs,uint32_t count) {
+        for (uint32_t i = 0; i < count; ++i) {
+            if (lhs[i] != rhs[i]) {
+                return static_cast<int32_t>(lhs[i]) - static_cast<int32_t>(rhs[i]);
+            }
+        }
+        return 0;
+    }
+    REX_HOOK(Game__stricmp, __stricmp)
+
     //Console Vars
     /*REX_HOOK_RAW(SetConfigCvar){
         REXLOG_INFO("[condemned2_hooks][SetConfigCvar] ({:#x}) {}", ctx.r5.u32, ctx.f1.f64 );

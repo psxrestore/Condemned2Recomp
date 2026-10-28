@@ -63,18 +63,25 @@
 0x826A5508 = {name="OnAttackEffect"} # Seems to be involved in whether there's gore or just a decal.
 0x826A26D8 = {name="DefaultWeapon"}
 
+#UI
+0x8241BBD0 = {name="Menu_RestartLevel"}
+
 # Bundles
-0x82326D10 = {name="Game_InitBundles"}
+0x82326D08 = {name="Game_InitBundles"}
 0x82325C08 = {name="Game_LoadStartingBundle"} # Loads a specific bndl!
 0x82156C88 = {name="Game_AddAssetToQueue"}
 0x821C09F0 = {name="Game_StartReadingAssets"}
 0x821AF4B0 = {name="Game_IterateAssetList"}
+0x821B5150 = {name="Game_BundleManager"}
 0x821B4648 = {name="Game_ReadAsset"}
 0x821AE858 = {name="Game_LoadExtResource"}
 0x821B1120 = {name="Game_ProcessBundle"}
 0x8217FB08 = {name="ResourceLoader"}
 0x821F7D78 = {name="Game_InitWorldModel"} 
 0x821F7E98 = {name="Game_InitWorldObject"} 
+
+# Memory/String
+0x825601E0 = {name="Game__stricmp"} 
 
 # Misc
 0x82561760 = {name="Math_ApplyLinearCurve"} # This has various applications, such as input sensitivity and various sfx settings.
