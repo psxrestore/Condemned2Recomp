@@ -25,7 +25,7 @@
 
 //Rex Cvars
 REXCVAR_DEFINE_DOUBLE(condemned2_input_sensitivity_max, 1.0, "Condemned 2/Input", "Mouse/Stick Sensitivity");
-REXCVAR_DEFINE_DOUBLE(condemned2_update_rate, 60.0, "Condemned 2/Experimental", "Update Rate");
+//REXCVAR_DEFINE_DOUBLE(condemned2_update_rate, 60.0, "Condemned 2/Experimental", "Update Rate");
 
 REX_EXTERN(__imp__UpdateFrame);
 REX_EXTERN(__imp__GetFloatCVar);

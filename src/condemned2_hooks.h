@@ -112,7 +112,7 @@ namespace Condemned2 {
             std::unordered_map<uint32_t, CCommand> pendingCommands;
             std::vector<HookCallback> _initialSet = {};
             std::vector<HookCallback> _callBacks = { 
-                {"condemned2_update_rate", 0x82013B14, 60.0f },
+                //{"condemned2_update_rate", 0x82013B14, 60.0f },
                 {"condemned2_input_sensitivity_max", 0x82028EC4, 1.0f},
             };
     };
