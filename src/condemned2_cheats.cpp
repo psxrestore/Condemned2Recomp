@@ -48,6 +48,15 @@ REXCVAR_DEFINE_STRING(condemned2_default_weapon, "None","Condemned 2/Extras/Unlo
     "Shovel", "Skull", "Sledgehammer", "taxidermy_knife", "Tire_Iron", "War_Hammer"
 });
 
+REXCVAR_DEFINE_STRING(condemned2_weapon_spawner, "None","Condemned 2/Extras/Unlockables", "Weapon Spawner").allowed({ //Values found in yeti.gamedb!
+    "None", "Baseball_Bat", "Baton", "BattleAxe", "Brace", "Brick", "Bowling_Ball", "Broadsword", "Cleaver", "Crowbar", 
+    "Crutch", "FireAxe", "fire_poker", "Flashlight", "Frying_Pan", "Golf_Club","Handgun_22", "Handgun_38", "Handgun_44", 
+    "Handgun_9mm", "Large_Wrench", "Meat_Hook", "Paper_Cutter", "Pipe", "Pipe_Lever", "Pipe_Steam", "Prosthetic_Arm",
+    "Rebar_Bent", "Rebar_Straight", "Rip_Hammer", "Rifle_Assault", "Rifle_Lever", "Shotgun_Double", "Shotgun_Pump", 
+    "Shotgun_Riot", "Special_Crossbow", "Special_Crossbow_NoExplode", "Subgun_Street", "Saw_Lollypop", "Short_Sword", 
+    "Shovel", "Skull", "Sledgehammer", "taxidermy_knife", "Tire_Iron", "War_Hammer"
+});
+
 //Rex Cvars
 namespace Condemned2 {
     Condemned2Cheats* g_condemned2_cheats = nullptr;
@@ -102,6 +111,18 @@ namespace Condemned2 {
             REXLOG_INFO("[condemned2_graphics][condemned2_default_weapon] {}", std::string(new_value));
         });
         SetStartingWeapon(rex::cvar::GetFlagByName("condemned2_default_weapon"));
+
+
+        //Weapon Spawner
+        rex::cvar::RegisterChangeCallback("condemned2_weapon_spawner", [&](std::string_view name, std::string_view new_value) {
+            if(std::string(new_value) == "None")
+                return;
+
+            _hook->SendCommandCmd({_hook->AllocateHeapForString(std::format("msg Player (ACQUIREWEAPON {})", std::string(new_value)).c_str()), 0, 0, 0});
+            _hook->SendCommandCmd({_hook->AllocateHeapForString(std::format("msg Player (ACQUIREAMMO {})", std::string(new_value)).c_str()), 0, 0, 0});
+            REXLOG_INFO("[condemned2_graphics][condemned2_weapon_spawner] {}", std::string(new_value));
+            rex::cvar::SetFlagByName("condemned2_weapon_spawner", "None"); 
+        });
 
         //Consoles
         rex::cvar::RegisterChangeCallback("condemned2_cmd", [&](std::string_view name, std::string_view new_value) {
