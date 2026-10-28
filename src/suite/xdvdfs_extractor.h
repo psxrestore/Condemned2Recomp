@@ -234,9 +234,9 @@ namespace RexGlueSuite {
           claimedExtents.emplace_back(absSector, absEnd);
           
           std::string name(&dirBuf[nameStart], entry->nameLength);
-          std::string fullPath = path.empty() ? name : path + "/" + name;
+          std::filesystem::path fullPath = path.empty() ? name : path + "/" + name;
           if (isDir && !name.empty() && name.front() == '$') {
-            REXLOG_INFO("[rexglue_suite_xdvdfs] Skipping system directory: {}", fullPath);
+            REXLOG_INFO("[rexglue_suite_xdvdfs] Skipping system directory: {}", fullPath.string());
             return;
           }
 
@@ -246,7 +246,7 @@ namespace RexGlueSuite {
             return;
           }
 
-          REXLOG_INFO("[rexglue_suite_xdvdfs] entry: {} | sector: {} | size: {} | dir: {}", fullPath, entry->sector, entry->size, isDir);
+          REXLOG_INFO("[rexglue_suite_xdvdfs] entry: {} | sector: {} | size: {} | dir: {}", fullPath.string(), entry->sector, entry->size, isDir);
 
           if (isDir) {
             dirs.push_back({ fullPath, entry->sector, entry->size });

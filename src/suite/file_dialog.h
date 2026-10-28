@@ -28,6 +28,21 @@ namespace RexGlueSuite {
                 if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,s.data(), static_cast<int>(s.size()), result.data(), len) <= 0) return {};
                 return result;
             }
+
+            static std::string clean_path(std::string value)
+            {
+                if (const auto nullPos = value.find('\0');
+                    nullPos != std::string::npos) {
+                    value.resize(nullPos);
+                }
+
+                while (!value.empty() &&
+                    std::isspace(static_cast<unsigned char>(value.back()))) {
+                    value.pop_back();
+                }
+
+                return value;
+            }
             #endif
 
             static std::optional<std::string> OpenFilePicker(){
@@ -50,7 +65,7 @@ namespace RexGlueSuite {
                     GtkFileChooser *chooser;
 
                     dialog = gtk_file_chooser_dialog_new(
-                        "Select ISO File", nullptr,
+                        "Select File", nullptr,
                         GTK_FILE_CHOOSER_ACTION_OPEN,
                         "_Cancel", GTK_RESPONSE_CANCEL,
                         "_Open", GTK_RESPONSE_ACCEPT,
@@ -75,7 +90,7 @@ namespace RexGlueSuite {
                     gtk_widget_destroy(dialog);
                     while (gtk_events_pending()) gtk_main_iteration(); // flush events
 
-                    return result;
+                    return clean_path(*result);
                 #endif
                 return std::nullopt;
             }
@@ -135,7 +150,7 @@ namespace RexGlueSuite {
                     pfd->Release();
                     CoUninitialize();
 
-                    return result;
+                    return clean_path(*result);
                 #elif REX_PLATFORM_LINUX
                     GtkWidget *dialog;
                     GtkFileChooser *chooser;
