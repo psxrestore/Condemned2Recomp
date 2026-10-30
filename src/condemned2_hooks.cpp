@@ -369,12 +369,6 @@ namespace Condemned2 {
         return 0;
     }
     REX_HOOK(Game__stricmp, __stricmp)
-    
-    //Saving
-    REX_HOOK_RAW(Game_CanSave){
-        g_condemned2_hooks->SetSave(ctx.r4.u32 == 0);
-        __imp__Game_CanSave(ctx,base);
-    }
 
     //Console Vars
     /*REX_HOOK_RAW(SetConfigCvar){
