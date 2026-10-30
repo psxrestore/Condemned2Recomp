@@ -73,13 +73,13 @@ REX_EXTERN(__imp__Input_GetButton);
 REX_EXTERN(__imp__Input_GetAxis);
 REX_EXTERN(__imp__Input_PlayerInput);
 REX_EXTERN(__imp__Input_OnAttackLanded);
-REX_EXTERN(__imp__Input_InHud);
-REX_IMPORT(Input_KeyDown, PressBind, uint32_t(uint32_t, uint32_t));
-REX_IMPORT(Input_KeyHold, HoldBind, uint32_t(uint32_t, uint32_t));
-
-//Native functions used for control schemes
+REX_EXTERN(__imp__Input_InHud); // Returns true if in any menu.
 REX_EXTERN(__imp__TvAntennaAdjust); // Function that processes Radio/TV antenna adjusting
 REX_EXTERN(__imp__IsMeleeWeapon); // Checks if player's current weapon is a melee weapon
+
+//Imported functions used for PC controls!
+REX_IMPORT(Input_KeyDown, PressBind, uint32_t(uint32_t, uint32_t));
+REX_IMPORT(Input_KeyHold, HoldBind, uint32_t(uint32_t, uint32_t));
 
 namespace rex::input::condemned2input {
   namespace {constexpr rex::input::DeviceId kDevice = static_cast<rex::input::DeviceId>(0x4E4F5000); constexpr uint32_t kInputManager = 0x4005ae70; constexpr uint32_t kInputManagerCRT = 0x200afcc0;}
@@ -89,7 +89,7 @@ namespace rex::input::condemned2input {
     REXLOG_INFO("[condemned2_input] Starting...");
     g_condemned2_input_driver = this;
 
-    //Compatibility with CRT.
+    //Compatibility with CRT since it offsets the input manager
     isUsingCRT = (rex::cvar::GetFlagByName("rexcrt_heap_enable") == "true" ? true : false);
 
     //Initialize PC binds
@@ -103,7 +103,6 @@ namespace rex::input::condemned2input {
       }
     }
     //Internal binds
-    //Menu navigation
     activeBinds["pause_menu"] = {{SDL_SCANCODE_ESCAPE}};
     activeBinds["menu_nav_up"] = {{SDL_SCANCODE_UP}};
     activeBinds["menu_nav_down"] = {{SDL_SCANCODE_DOWN}};
@@ -129,7 +128,7 @@ namespace rex::input::condemned2input {
       isDebuggingFrames = ( new_value == "true" ? true : false );
     });
 
-    // Register once:
+    //Register once ( Only even used for mouse wheel )
     SDL_AddEventWatch(&Condemned2InputDriver::WatchEventCallback, this);
   }
 
@@ -215,6 +214,7 @@ namespace rex::input::condemned2input {
 
   std::unique_ptr<InputSystem> CreateInputSystem(bool tool_mode) {
     auto input = std::make_unique<InputSystem>(nullptr);
+    //Used for gamepad!
     auto sdl_driver = std::make_unique<sdl::SDLInputDriver>(nullptr, 0);
     if (sdl_driver->Setup() == X_STATUS_SUCCESS) {
       input->AddDriver(std::move(sdl_driver));
@@ -260,7 +260,7 @@ namespace rex::input::condemned2input {
     //Wait one frame for native input system to initialize
     if(!blockFirstFrame){
       blockFirstFrame = true;
-      return X_ERROR_DEVICE_NOT_CONNECTED;
+      return X_ERROR_SUCCESS;
     }
 
     //Toggles mouse/cursor control when settings is active.
@@ -274,16 +274,28 @@ namespace rex::input::condemned2input {
       }
     }
 
-    if(isDialogOpen){
+    //PC Controls aren't active with any dialog is open.
+    if(!isDialogOpen){
+      PCControls();
+    }else{
+      //Reset all movement when a dialog is active
       move_dx = 0;
       move_dy = 0;
       last_dx = 0;
       last_dy = 0;
       last_add_dx = 0;
       last_add_dy = 0;
-      return X_ERROR_SUCCESS;
     }
+    
+    //Update controller
+    packet_number_++; // Increment input packet number
+    if (out_state) {
+      out_state->packet_number = packet_number_;
+    }
+    return X_ERROR_SUCCESS;
+  }
 
+  void Condemned2InputDriver::PCControls(){
     //Left Stick/Movement
     double lx = 0;
     double ly = 0;
@@ -300,7 +312,7 @@ namespace rex::input::condemned2input {
     move_dx = lx;
     move_dy = ly;
     
-    // Mouse Button Events
+    // Mouse buttons
     bool hasMeleeWeapon = IsUsingMeleeWeapon();
     bool isMouseLeftPressed = Pressed(activeBinds["condemned2_input_primary_fire"]);
     bool isMouseRightPressed = Pressed(activeBinds["condemned2_input_secondary_fire"]);
@@ -322,13 +334,11 @@ namespace rex::input::condemned2input {
         0x65 // Cancel investigation
       });
     }
-
-    //Mouse events
+    //Mouse movement
     float dx = 0.0f, dy = 0.0f;
-    if(!isDialogOpen){ // Don't allow mouse movement when dialogs are open!
-      SDL_GetRelativeMouseState(&dx, &dy);
-    }
+    SDL_GetRelativeMouseState(&dx, &dy);
     double sensitivity = REXCVAR_GET(condemned2_input_mouse_sensitivity);
+    // Mouse look
     last_dx = dx * sensitivity;
     last_dy = dy * sensitivity;
     // Additive mouse delta
@@ -337,18 +347,16 @@ namespace rex::input::condemned2input {
     last_add_dx = std::clamp(last_add_dx, -1.0, 1.0);
     last_add_dy = std::clamp(last_add_dy, -1.0, 1.0);
 
-    // Native PC Controls
-    // UI Controls
     // Navigation
     Held({activeBinds["menu_nav_up"], activeBinds["condemned2_input_move_forward"]}, {0x82}, wheelY == 0.0f, wheelY > 0.0f);
     Held({activeBinds["menu_nav_down"], activeBinds["condemned2_input_move_backward"]}, {0x83}, wheelY == 0.0f, wheelY < 0.0f);
     Held({activeBinds["menu_nav_right"], activeBinds["condemned2_input_move_right"]}, {0x85, 0x8e} );
     Held({activeBinds["menu_nav_left"], activeBinds["condemned2_input_move_left"]}, {0x84, 0x8d} );
 
-    // Commands
+    //Confirm, Use Commands
     if(IsInMenu()){
       if(Pressed(activeBinds["condemned2_input_use"]) || Pressed(activeBinds["menu_enter"])){ //buttons |= X_INPUT_GAMEPAD_B;
-        NativeKeyPress(
+        NativeKeyPress({
           //Submit menu confirm
           0xa6,
           0x5b,
@@ -358,26 +366,31 @@ namespace rex::input::condemned2input {
           0xa7, //In-game menu confirm
           0xb7, // Used for dialogs in fight club
           0xba, // Close tutorial dialogs
-          0x57,  // Use action
           0x5d // Choose investigation choice
         });
       }
     }else{
-      Held({activeBinds["condemned2_input_use"], activeBinds["menu_enter"]}, {
-        //Submit menu confirm
-        0xa6,
-        0x5b,
-        //Menu confirm
-        0x87,
-        0xb5,
-        0xa7, //In-game menu confirm
-        0xb7, // Used for dialogs in fight club
-        0xba, // Close tutorial dialogs
-        0x57,  // Use action
-        0x5d // Choose investigation choice
-      } );
+      //Menu interaction
+      if(Pressed(activeBinds["condemned2_input_use"]) || Pressed(activeBinds["menu_enter"])){ //buttons |= X_INPUT_GAMEPAD_B;
+        NativeKeyPress({
+          //Submit menu confirm
+          0xa6,
+          0x5b,
+          //Menu confirm
+          0x87,
+          0xb5,
+          0xa7, //In-game menu confirm
+          0xb7, // Used for dialogs in fight club
+          0xba, // Close tutorial dialogs
+          0x57,
+          0x5d // Choose investigation choice
+        });
+      }
+      //Player use action
+      Held({activeBinds["condemned2_input_use"], activeBinds["menu_enter"]}, {0x57} );
     }
-
+    
+    //Menu back
     if(Pressed(activeBinds["menu_go_back"])){ //buttons |= X_INPUT_GAMEPAD_B;
       NativeKeyPress({
         0x88,
@@ -386,7 +399,6 @@ namespace rex::input::condemned2input {
       });
     }
 
-    //Player Input
     //Actions
     if(Pressed(activeBinds["pause_menu"])){ //buttons |= X_INPUT_GAMEPAD_START
       NativeKeyPress({0xd});
@@ -412,7 +424,6 @@ namespace rex::input::condemned2input {
     if(IsDown(activeBinds["condemned2_input_hook_attacks"])){
       NativeKeyPress({0x42, 0xa8});
     }
-
     Held({activeBinds["condemned2_input_objectives"]}, {0x4f, 0x4e} );
     Held({activeBinds["condemned2_input_forensics"]}, {0x74, 0x71} );
     if(Pressed(activeBinds["condemned2_input_tool_take_picture"])){
@@ -435,14 +446,7 @@ namespace rex::input::condemned2input {
     if(Pressed(activeBinds["condemned2_input_tool_gps"])){
       NativeKeyPress({0x74,0x71,0x99,0x9f});
     }
-    
-    //Update controller
-    g_condemned2_input_driver->SetMouseWheelY(0);
-    packet_number_++; // Increment input packet number
-    if (out_state) {
-      out_state->packet_number = packet_number_;
-    }
-    return X_ERROR_SUCCESS;
+    g_condemned2_input_driver->SetMouseWheelY(0); //Reset wheel after a frame.
   }
   
   bool SDLCALL Condemned2InputDriver::WatchEventCallback(void* userdata, SDL_Event* event){
@@ -564,7 +568,7 @@ namespace rex::input::condemned2input {
     // Mouse Button Handling
     MouseBind mouseClick = g_condemned2_input_driver->MouseClick();
     if(mouseClick.isMouseMiddle && g_condemned2_input_driver->IsUsingMeleeWeapon()){ //Alt block
-      if (btn == 0x79 || btn == 0x65 || btn == 0x47 || btn == 0x7a){
+      if (btn == 0x79 || btn == 0x7a){
         return 1.0;
       }
     }
@@ -631,30 +635,21 @@ namespace rex::input::condemned2input {
       return 1;
     }
 
-    //Melee Combos
+    //Attacks ( Left and Right Buttons )
     MouseBind mouseClick = g_condemned2_input_driver->MouseClick();
-    if( g_condemned2_input_driver->IsUsingMeleeWeapon()){
-      if (btn == 0x7a ) {
-        return mouseClick.isMouseRightPressed;
-      }else if(btn == 0x79){ 
-        return mouseClick.isMouseLeftPressed;
-      }
+    bool isMiddleClicked = false;
+    if(g_condemned2_input_driver->IsUsingMeleeWeapon()){ //Alt block
+      isMiddleClicked = mouseClick.isMouseMiddle;
     }
-
-    //Firearms
-    if (btn == 0x11 || btn == 0x65 ) {
-      return mouseClick.isMouseRight || mouseClick.isMouseRightPressed;
-    }else if(btn == 0x1c || btn == 0x47){ 
-      return mouseClick.isMouseLeft || mouseClick.isMouseLeftPressed;
+    if (btn == 0x11 || btn == 0x65 || btn == 0x7a ) {
+      return mouseClick.isMouseRight || mouseClick.isMouseRightPressed || isMiddleClicked;
+    }else if(btn == 0x1c || btn == 0x47 || btn == 0x79){ 
+      return mouseClick.isMouseLeft || mouseClick.isMouseLeftPressed || isMiddleClicked;
     }
     return 0;
   }
 
   //Input Event Functions
-  REX_HOOK_RAW(Input_InHud){
-    __imp__Input_InHud(ctx,base);
-    g_condemned2_input_driver->SetMenuMode(ctx.r3.u32 == 0);
-  }
   REX_HOOK_RAW(Input_GetAxis) {
     uint32_t newID = ctx.r4.u32;
     double newValue = GetAxisOverrideValue(newID);
@@ -702,17 +697,6 @@ namespace rex::input::condemned2input {
     }
     __imp__Input_PlayerInput(ctx, base);
   }
-  
-  // Handles on attack landed events!
-  REX_HOOK_RAW(Input_OnAttackLanded){
-    uint32_t temp = ctx.r3.u32;
-    uint32_t tempB = ctx.r5.u32;
-    __imp__Input_OnAttackLanded(ctx, base);
-    if(g_condemned2_input_driver->IsDebugging()){
-      REXLOG_INFO("[condemned2_input][Input_OnAttackLanded] {:#x} {:#x} {:#x} {:#x} {:#x}", temp, tempB, ctx.r5.u32, ctx.r6.u32, ctx.r3.u64);
-    }
-  }
-  
   // Radio & TV Antenna Adjustment Function
   REX_HOOK_RAW(TvAntennaAdjust) {
     g_condemned2_input_driver->SetTuningControls( true );
@@ -724,6 +708,20 @@ namespace rex::input::condemned2input {
     __imp__IsMeleeWeapon(ctx, base);
     //REXLOG_INFO("[condemned2_input][IsMeleeWeapon] {:#x}", ctx.r3.u64 );
     g_condemned2_input_driver->SetMeleeControls( ctx.r3.u64 != 0 );
+  }
+  // Checks if we're in a menu or not! This does not count in-game menus for investigations or fight club!
+  REX_HOOK_RAW(Input_InHud){
+    __imp__Input_InHud(ctx,base);
+    g_condemned2_input_driver->SetMenuMode(ctx.r3.u32);
+  }
+  // Handles on attack landed events for player and NPCs.
+  REX_HOOK_RAW(Input_OnAttackLanded){
+    uint32_t temp = ctx.r3.u32;
+    uint32_t tempB = ctx.r5.u32;
+    __imp__Input_OnAttackLanded(ctx, base);
+    if(g_condemned2_input_driver->IsDebugging()){
+      REXLOG_INFO("[condemned2_input][Input_OnAttackLanded] {:#x} {:#x} {:#x} {:#x} {:#x}", temp, tempB, ctx.r5.u32, ctx.r6.u32, ctx.r3.u64);
+    }
   }
 }  // namespace rex::input::condemned2input
 

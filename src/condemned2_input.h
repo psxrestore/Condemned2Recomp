@@ -55,7 +55,7 @@ namespace rex::input::condemned2input{
          X_RESULT SetDeviceVibration(DeviceId id, X_INPUT_VIBRATION* vibration) override;
          X_RESULT GetDeviceKeystroke(DeviceId id, uint32_t flags, X_INPUT_KEYSTROKE* out_keystroke) override;
          void OnWindowAvailable(rex::ui::Window* window) override;
-
+         void PCControls();
          uint32_t GetInputManager();
 
          bool IsAnyDialogOpen();
