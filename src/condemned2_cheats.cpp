@@ -23,6 +23,7 @@
 
 REX_EXTERN(__imp__Unlockables_Levels);
 REX_EXTERN(__imp__Unlockables_Upgrades);
+REX_EXTERN(__imp__Player_HasUpgrade);
 REX_EXTERN(__imp__GunAccuracyMultiplier);
 REX_EXTERN(__imp__RandomAccuracyKnockoff);
 REX_EXTERN(__imp__DefaultWeapon);
@@ -32,15 +33,17 @@ REXCVAR_DEFINE_BOOL(condemned2_cheat_fps_mode, false, "Condemned 2/Extras/Unlock
 REXCVAR_DEFINE_BOOL(condemned2_cheat_unlock_all_levels, false, "Condemned 2/Extras/Unlockables", "Unlock All Levels");
 REXCVAR_DEFINE_BOOL(condemned2_cheat_unlock_upgrades, false, "Condemned 2/Extras/Unlockables", "Unlocks All Upgrades");
 REXCVAR_DEFINE_BOOL(condemned2_cheat_top_gun_accuracy, false, "Condemned 2/Extras/Unlockables", "100% Accuracy");
+REXCVAR_DEFINE_BOOL(condemned2_cheat_god_mode, false, "Condemned 2/Extras/Unlockables", "God Mode");
 //QoL
 //REXCVAR_DEFINE_BOOL(condemned2_qol_skip_intro_movies, false, "Condemned 2/Extras/QoL Improvements", "Skip Intro");
 REXCVAR_DEFINE_BOOL(condemned2_qol_skip_ingame_movies, false, "Condemned 2/Extras/QoL Improvements", "Skip In-Game Movies");
+REXCVAR_DEFINE_DOUBLE(condemned2_flashlight_intensity, 1.0, "Condemned 2/Extras/QoL Improvements", "Flashlight Intensity").range(0.5f, 4.0f);
 //Console
 REXCVAR_DEFINE_STRING(condemned2_cmd, "", "Condemned 2/Extras/Console", "In-game Console");
 REXCVAR_DEFINE_STRING(condemned2_msg, "", "Condemned 2/Extras/Console", "Manager Console.");
 //Weapon Spawner
 REXCVAR_DEFINE_STRING(condemned2_default_weapon, "None","Condemned 2/Extras/Unlockables", "Starting Weapon").allowed({ //Values found in yeti.gamedb!
-    "None", "Baseball_Bat", "Baton", "BattleAxe", "Brace", "Brick", "Bowling_Ball", "Broadsword", "Cleaver", "Crowbar", 
+    "None", "Baseball_Bat", "Baton", "BattleAxe", "BattleAxe_2H", "Brace", "Brick", "Bowling_Ball", "Broadsword", "Cleaver", "Crowbar", 
     "Crutch", "FireAxe", "fire_poker", "Flashlight", "Frying_Pan", "Golf_Club","Handgun_22", "Handgun_38", "Handgun_44", 
     "Handgun_9mm", "Large_Wrench", "Meat_Hook", "Paper_Cutter", "Pipe", "Pipe_Lever", "Pipe_Steam", "Prosthetic_Arm",
     "Rebar_Bent", "Rebar_Straight", "Rip_Hammer", "Rifle_Assault", "Rifle_Lever", "Shotgun_Double", "Shotgun_Pump", 
@@ -49,7 +52,7 @@ REXCVAR_DEFINE_STRING(condemned2_default_weapon, "None","Condemned 2/Extras/Unlo
 });
 
 REXCVAR_DEFINE_STRING(condemned2_weapon_spawner, "None","Condemned 2/Extras/Unlockables", "Weapon Spawner").allowed({ //Values found in yeti.gamedb!
-    "None", "Baseball_Bat", "Baton", "BattleAxe", "Brace", "Brick", "Bowling_Ball", "Broadsword", "Cleaver", "Crowbar", 
+    "None", "Baseball_Bat", "Baton", "BattleAxe", "BattleAxe_2H", "Brace", "Brick", "Bowling_Ball", "Broadsword", "Cleaver", "Crowbar", 
     "Crutch", "FireAxe", "fire_poker", "Flashlight", "Frying_Pan", "Golf_Club","Handgun_22", "Handgun_38", "Handgun_44", 
     "Handgun_9mm", "Large_Wrench", "Meat_Hook", "Paper_Cutter", "Pipe", "Pipe_Lever", "Pipe_Steam", "Prosthetic_Arm",
     "Rebar_Bent", "Rebar_Straight", "Rip_Hammer", "Rifle_Assault", "Rifle_Lever", "Shotgun_Double", "Shotgun_Pump", 
@@ -90,6 +93,14 @@ namespace Condemned2 {
         });
         _hook->SendCommandCmd("FPSMode", std::stod( Condemned2::Condemned2Hook::GetSafeString( rex::cvar::GetFlagByName("condemned2_cheat_fps_mode") ) ) ); 
 
+        // God Mode
+        rex::cvar::RegisterChangeCallback("condemned2_cheat_god_mode", [&](std::string_view name, std::string_view new_value) {
+            bool newGodMode = ( new_value == "true" );
+            _hook->SendCommandCmd({_hook->AllocateHeapForString(std::format("msg Player (candamage {})", !newGodMode).c_str()), 0, 0, 0});
+            isGodModeActive = newGodMode; 
+        });
+        isGodModeActive = (rex::cvar::GetFlagByName("condemned2_cheat_god_mode") == "true"); 
+        
         // Skip Intro Movies
         /*rex::cvar::RegisterChangeCallback("condemned2_qol_skip_intro_movies", [&](std::string_view name, std::string_view new_value) {
             _hook->SendCommandCmd("SkipSplashScreens",  std::stod( Condemned2::Condemned2Hook::GetSafeString( new_value ) ) ); //SkipSplashScreens
@@ -102,16 +113,17 @@ namespace Condemned2 {
         });
         _hook->SendCommandCmd("SkipIngameMovies", std::stod( Condemned2::Condemned2Hook::GetSafeString( rex::cvar::GetFlagByName("condemned2_qol_skip_ingame_movies") ) ) ); 
 
+        //Flashlight
+        rex::cvar::RegisterChangeCallback("condemned2_flashlight_intensity", [&](std::string_view name, std::string_view new_value) {
+            _hook->SendCommandCmd({_hook->AllocateHeapForString(std::format("msg Player (flashlightintensity {} 1)", std::string(new_value)).c_str()), 0, 0, 0});
+        });
+
         //Starting weapon
         rex::cvar::RegisterChangeCallback("condemned2_default_weapon", [&](std::string_view name, std::string_view new_value) {
-            if(std::string(new_value) == "None")
-                return;
-
             SetStartingWeapon(std::string(new_value));
             REXLOG_INFO("[condemned2_graphics][condemned2_default_weapon] {}", std::string(new_value));
         });
         SetStartingWeapon(rex::cvar::GetFlagByName("condemned2_default_weapon"));
-
 
         //Weapon Spawner
         rex::cvar::RegisterChangeCallback("condemned2_weapon_spawner", [&](std::string_view name, std::string_view new_value) {
@@ -153,53 +165,72 @@ namespace Condemned2 {
     }
  
     REX_HOOK_RAW(Unlockables_Levels) { 
-        if( g_condemned2_cheats->HasAllLevelsUnlocked() ){
+        if( !g_condemned2_cheats->HasAllLevelsUnlocked() ){
+            __imp__Unlockables_Levels(ctx, base);
             return;
         }
-        __imp__Unlockables_Levels(ctx, base);
     }
 
     REX_HOOK_RAW(Unlockables_Upgrades) {
-        if(  g_condemned2_cheats->HasAllUpgrades() ){
+        if( !g_condemned2_cheats->HasAllUpgrades() ){
+            __imp__Unlockables_Upgrades(ctx, base);
             return;
         }
-        __imp__Unlockables_Upgrades(ctx, base);
+    }
+
+    REX_HOOK_RAW(Player_HasUpgrade) {
+        if(  !g_condemned2_cheats->HasAllUpgrades() ){
+            __imp__Player_HasUpgrade(ctx, base);
+            return;
+        }
+       ctx.r8.u64 = 1;
     }
 
     REX_HOOK_RAW(GunAccuracyMultiplier) {
-        if( g_condemned2_cheats->HasTopGunEfficiency() ){
-            ctx.f1.f32 = 0.0f;
+        if( !g_condemned2_cheats->HasTopGunEfficiency() ){
+            __imp__GunAccuracyMultiplier(ctx, base);
             return;
         }
-        __imp__GunAccuracyMultiplier(ctx, base);
+        ctx.f1.f32 = 0.0f;
     }
 
     REX_HOOK_RAW(RandomAccuracyKnockoff) {
-        if( g_condemned2_cheats->HasTopGunEfficiency() ){
-            ctx.f1.f32 = 0.0f;
+        if( !g_condemned2_cheats->HasTopGunEfficiency() ){
+            __imp__RandomAccuracyKnockoff(ctx, base);
             return;
         }
-        __imp__RandomAccuracyKnockoff(ctx, base);
+        ctx.f1.f32 = 0.0f;
     }
 
     REX_HOOK_RAW(DefaultWeapon){
-        REXLOG_INFO("[condemned2_hooks][DefaultWeapon]");
+        Condemned2Hook* hook = g_condemned2_cheats->GetHook();
+        if (hook != nullptr) {
+            std::string intensity = rex::cvar::GetFlagByName("condemned2_flashlight_intensity");
+            if(intensity == "1.0"){
+                hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (flashlightintensity {} 1)", rex::cvar::GetFlagByName("condemned2_flashlight_intensity") ).c_str()), 0, 0, 0});
+            }
+            hook->SendCommandCmd({hook->AllocateHeapForString("msg Player (GRENADEOVERRIDE Taser_Level03)"), 0, 0, 0});
+            hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (candamage {})", !g_condemned2_cheats->IsGodModeActive()).c_str()), 0, 0, 0});
+        }
+
         std::string selectedWeapon = g_condemned2_cheats->GetStartingWeapon();
+        REXLOG_INFO("[condemned2_hooks][DefaultWeapon] {}", selectedWeapon);
         const std::size_t wpnStr = selectedWeapon.find("None"); 
-        if (wpnStr == std::string::npos){
-            Condemned2Assets* assets = g_condemned2_cheats->GetAssets();
-            if (assets != nullptr ){
-                const std::string name_s = assets->GetBundlePathFromName(selectedWeapon);
-                if(!name_s.empty()){
-                    assets->LoadAdditionalBundle(ctx, base, name_s);
-                    Condemned2Hook* hook = g_condemned2_cheats->GetHook();
-                    if (hook != nullptr) {
-                        hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (ACQUIREWEAPON {})", selectedWeapon).c_str()), 0, 0, 0});
-                        hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (ACQUIREAMMO {})", selectedWeapon).c_str()), 0, 0, 0});
-                    }
+        if (wpnStr != std::string::npos){
+            __imp__DefaultWeapon(ctx, base);
+            return;
+        }
+
+        Condemned2Assets* assets = g_condemned2_cheats->GetAssets();
+        if (assets != nullptr ){
+            const std::string name_s = assets->GetBundlePathFromName(selectedWeapon);
+            if(!name_s.empty()){
+                assets->LoadAdditionalBundle(ctx, base, name_s);
+                if (hook != nullptr) {
+                    hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (ACQUIREWEAPON {})", selectedWeapon).c_str()), 0, 0, 0});
+                    hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (ACQUIREAMMO {})", selectedWeapon).c_str()), 0, 0, 0});
                 }
             }
         }
-        __imp__DefaultWeapon(ctx, base);
     }
 }  // namespace Condemned2

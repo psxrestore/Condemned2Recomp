@@ -53,6 +53,7 @@
 #Unlockables and Cheats
 0x823077E0 = {name="Unlockables_Levels"}
 0x823079C8 = {name="Unlockables_Upgrades"}
+0x82307BA8 = {name="Player_HasUpgrade"}
 0x823DE5D8 = {name="GunAccuracyMultiplier"}
 0x826C0290 = {name="RandomAccuracyKnockoff"}
 
@@ -62,9 +63,7 @@
 0x824384F0 = {name="BodyCapFunction"} # Body capsule physics
 0x826A5508 = {name="OnAttackEffect"} # Seems to be involved in whether there's gore or just a decal.
 0x826A26D8 = {name="DefaultWeapon"}
-
-#UI
-0x8241BBD0 = {name="Menu_RestartLevel"}
+0x823352B0 = {name="Game_CanSave"}
 
 # Bundles
 0x82326D08 = {name="Game_InitBundles"}

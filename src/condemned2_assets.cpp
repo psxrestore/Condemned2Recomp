@@ -53,6 +53,7 @@ namespace Condemned2 {
             { "Baseball_Bat", R"(Worlds\SP\Mission_02\M02_0000.bndl)" },
             { "Baton", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
             { "BattleAxe", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "BattleAxe_2H", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
             { "Brace", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
             { "Brick", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
             { "Bowling_Ball", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
@@ -100,6 +101,7 @@ namespace Condemned2 {
             { "baseball_bat.mdl", R"(Worlds\SP\Mission_02\M02_0000.bndl)" },
             { "baton.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
             { "battleaxe.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
+            { "battleaxe_2h.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
             { "brace.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
             { "brick.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
             { "bowling_ball.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
@@ -131,6 +133,7 @@ namespace Condemned2 {
             { "shotgun_pump.mdl", R"(Worlds\SP\Mission_01\M01_0000.bndl)" },
             { "combat_shotgun.mdl", R"(Worlds\SP\Mission_07\M07_0000.bndl)" },
             { "special_crossbow.mdl", R"(Worlds\SP\Mission_08\M08_0000.bndl)" },
+            { "crossbow_museum.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
             { "subgun.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
             { "saw_lollypop.mdl", R"(Worlds\SP\Mission_04\M04_0000.bndl)" },
             { "short_sword.mdl", R"(Worlds\SP\Mission_06\M06_0000.bndl)" },
@@ -160,7 +163,7 @@ namespace Condemned2 {
     bool Condemned2Assets::LoadAdditionalBundle(PPCContext& ctx, uint8_t* base, const std::string& bundlePath ) {
         if (IsBundleLoaded(bundlePath) || IsBundleOwned(bundlePath)) {
             if (IsDebugging()) {
-                REXLOG_INFO("[Condemned2Assets] Already loaded: {}",bundlePath);
+                REXLOG_INFO("[condemned2_assets][LoadAdditionalBundle] Already loaded: {}",bundlePath);
             }
             return true;
         }
@@ -170,7 +173,7 @@ namespace Condemned2 {
         }
         const uint32_t engine = hook->get_pointer_from_pointer(kEnginePtr);
         if (engine == 0) {
-            REXLOG_ERROR("[Condemned2Assets] Engine pointer is null");
+            REXLOG_ERROR("[condemned2_assets][LoadAdditionalBundle] Engine pointer is null");
             return false;
         }
         const uint32_t engineVtable = hook->get_pointer_from_pointer(engine);
@@ -183,7 +186,7 @@ namespace Condemned2 {
         }
         const uint32_t resourceManager = hook->CallIndirectFunction(ctx,base,getManager,engine);
         if (resourceManager == 0) {
-            REXLOG_ERROR("[Condemned2Assets] Resource manager is null");
+            REXLOG_ERROR("[condemned2_assets][LoadAdditionalBundle] Resource manager is null");
             return false;
         }
         const uint32_t managerVtable = hook->get_pointer_from_pointer(resourceManager);
@@ -204,7 +207,7 @@ namespace Condemned2 {
             return false;
         }
         AddOwnedBundle(bundlePath, handle);
-        REXLOG_INFO("[Condemned2Assets] Load {} -> handle {:#x}",bundlePath,handle);
+        REXLOG_INFO("[condemned2_assets][LoadAdditionalBundle] Load {} -> handle {:#x}",bundlePath,handle);
         return true;
     }
 
@@ -224,7 +227,7 @@ namespace Condemned2 {
         ownedBundles.clear();
         for (const auto& [path, handle] : bundles) {
             if (handle != 0) {
-                REXLOG_INFO( "[Condemned2Assets] Releasing '{}' handle={:#x}", path, handle );
+                REXLOG_INFO( "[condemned2_assets][UnloadBundles] Releasing '{}' handle={:#x}", path, handle );
                 ReleaseBundle(ctx, base, handle);
             }
         }
@@ -275,7 +278,7 @@ namespace Condemned2 {
 
     REX_HOOK_RAW(Game_LoadStartingBundle) {
         if(g_condemned2_assets->IsDebugging()){
-            REXLOG_INFO("[Game_LoadStartingBundle] object={:#x} value={:#x} lr={:#x}",ctx.r3.u32,ctx.r4.u32, ctx.lr);
+            REXLOG_INFO("[condemned2_assets][Game_LoadStartingBundle] object={:#x} value={:#x} lr={:#x}",ctx.r3.u32,ctx.r4.u32, ctx.lr);
         }
         g_condemned2_assets->UnloadBundles(ctx, base);
         g_condemned2_assets->ClearLoadedResources();
@@ -283,7 +286,7 @@ namespace Condemned2 {
         __imp__Game_LoadStartingBundle(ctx, base);
         if(g_condemned2_assets->IsDebugging()){
             const char* name_h = g_condemned2_assets->GetHook()->GetMemory()->TranslateVirtual<const char*>(ctx.r3.u32);
-            REXLOG_INFO("[Game_LoadStartingBundle] return={:#x} name={}",ctx.r3.u32, name_h);
+            REXLOG_INFO("[condemned2_assets][Game_LoadStartingBundle] return={:#x} name={}",ctx.r3.u32, name_h);
         }
     }
 
@@ -291,7 +294,7 @@ namespace Condemned2 {
         //rex::cvar::SetFlagByName("clear_memory_page_state", "true");
         if(g_condemned2_assets->IsDebugging()){
             uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32, unk = ctx.r5.u64; 
-            REXLOG_INFO("[Game_StartReadingAssets] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g );
+            REXLOG_INFO("[condemned2_assets][Game_StartReadingAssets] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g );
         }
         __imp__Game_StartReadingAssets(ctx, base);
         //rex::cvar::SetFlagByName("clear_memory_page_state", "false");
@@ -300,7 +303,7 @@ namespace Condemned2 {
     REX_HOOK_RAW(Game_IterateAssetList) {
         if(g_condemned2_assets->IsDebugging()){
             uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32, unk = ctx.r5.u64; 
-            REXLOG_INFO("[Game_IterateAssetList] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g );
+            REXLOG_INFO("[condemned2_assets][Game_IterateAssetList] this={:#x} lr={:#x} name_address={:#x}", self, ctx.lr, name_g );
         }
         __imp__Game_IterateAssetList(ctx, base);
     }
@@ -309,7 +312,7 @@ namespace Condemned2 {
         uint32_t self = ctx.r3.u64, name_g = ctx.r4.u32, unk = ctx.r5.u64; 
         const char* p = g_condemned2_assets->GetHook()->GetMemory()->TranslateVirtual<const char*>(name_g); 
         if(g_condemned2_assets->IsDebugging()){
-            REXLOG_INFO("[Game_ReadAsset] this={:#x} lr={:#x} name_address={:#x} name={}", self, ctx.lr, name_g, p);
+            REXLOG_INFO("[condemned2_assets][Game_ReadAsset] this={:#x} lr={:#x} name_address={:#x} name={}", self, ctx.lr, name_g, p);
         }
         if (p != nullptr) {
             if (g_condemned2_assets->IsAssetBundle(p) && !g_condemned2_assets->IsBundleOwned(p) ) {
@@ -328,7 +331,7 @@ namespace Condemned2 {
         if(p != nullptr){
             if(ctx.r3.u32 == 1){
                 if(g_condemned2_assets->IsDebuggingResources() ){
-                    REXLOG_INFO("[Game_LoadExtResource] this={:#x} lr={:#x} name_address={:#x} name={}", self, ctx.lr, name_g, p);
+                    REXLOG_INFO("[condemned2_assets][Game_LoadExtResource] this={:#x} lr={:#x} name_address={:#x} name={}", self, ctx.lr, name_g, p);
                 }
                 g_condemned2_assets->AddLoadedResource(p);
             }
@@ -337,11 +340,11 @@ namespace Condemned2 {
 
     REX_HOOK_RAW(Game_ProcessBundle) {
         if(g_condemned2_assets->IsDebugging()){
-            REXLOG_INFO("[Game_ProcessBundle::Begin] this={:#x} lr={:#x} name_address={:#x}", ctx.r3.u64, ctx.lr, ctx.r4.u32);
+            REXLOG_INFO("[condemned2_assets][Game_ProcessBundle::Begin] this={:#x} lr={:#x} name_address={:#x}", ctx.r3.u64, ctx.lr, ctx.r4.u32);
         }
         __imp__Game_ProcessBundle(ctx, base);
         if(g_condemned2_assets->IsDebugging()){
-            REXLOG_INFO("[Game_ProcessBundle::End]");
+            REXLOG_INFO("[condemned2_assets][Game_ProcessBundle::End]");
         }
     }
 
@@ -355,7 +358,7 @@ namespace Condemned2 {
         const char* name_h = g_condemned2_assets->GetHook()->GetMemory()->TranslateVirtual<const char*>(name_g);
         if(name_h != nullptr){
             if(g_condemned2_assets->IsDebugging()){
-                REXLOG_INFO("[condemned2_hooks][Game_InitWorldObject] this={:#x} name_address={:#x} name={}", ctx.r3.u32, name_g, name_h);
+                REXLOG_INFO("[condemned2_assets][Game_InitWorldObject] this={:#x} name_address={:#x} name={}", ctx.r3.u32, name_g, name_h);
             }
         }
         __imp__Game_InitWorldObject(ctx, base);
