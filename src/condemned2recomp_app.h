@@ -42,7 +42,6 @@ namespace Condemned2 {
 
                 config.gpu_plugin = "xenos";
                 config.input_factory = REX_INPUT_BACKEND(rex::input::condemned2input::CreateInputSystem);
-                
                 //Force high resolution timer for Windows
                 #if REX_PLATFORM_WIN32
                     timeBeginPeriod(1);
@@ -102,7 +101,7 @@ namespace Condemned2 {
                 }
                 if (requiresLauncher) {
                     app_context().CallInUIThreadDeferred([this, parsedJson, resume = std::move(resume)]() mutable {
-                        _launcherDialog = std::make_unique<GameLauncherDialog>(imgui_drawer(), defaultPaths, std::move(resume), [this]() {
+                        _launcherDialog = std::make_unique<GameLauncherDialog>(imgui_drawer(), immediate_drawer(), _hooks, defaultPaths, std::move(resume), [this]() {
                             app_context().CallInUIThreadDeferred([this]() {
                                 if (_launcherDialog ) {
                                     _launcherDialog.reset();
@@ -118,8 +117,8 @@ namespace Condemned2 {
             
             //Imgui Functions
             void OnConfigureFonts(ImFontAtlas* atlas) override {
-                LoadFont(atlas, "Assets/fonts/ZTNature-Medium.ttf", 32.0f);
-                LoadFont(atlas, "Assets/fonts/ZTNature-Black.ttf", 32.0f);
+                LoadFont(atlas, "Assets/fonts/selawk.ttf", 64.0f);
+                LoadFont(atlas, "Assets/fonts/selawkb.ttf", 64.0f);
             }
 
             void LoadFont(ImFontAtlas* atlas, std::filesystem::path fontPath, float fontSize){
@@ -133,13 +132,13 @@ namespace Condemned2 {
                         if (_launcherDialog ) {
                             _launcherDialog.reset();
                         }else{
-                            _launcherDialog = std::make_unique<GameLauncherDialog>(drawer, defaultPaths, nullptr, [this]() {
+                            _launcherDialog = std::make_unique<GameLauncherDialog>(drawer, immediate_drawer(), _hooks, defaultPaths, nullptr, [this]() {
                                 app_context().CallInUIThreadDeferred([this]() {
                                     if (_launcherDialog ) {
                                         _launcherDialog.reset();
                                     }
                                 });
-                            }, &app_context(), nlohmann::json(nullptr), loadedFonts, GameLauncherDialog::LauncherState::PCMenu);
+                            }, &app_context(), nlohmann::json(nullptr), loadedFonts, GameLauncherDialog::LauncherState::PCMenu, false);
                         }
                     });
                 });
