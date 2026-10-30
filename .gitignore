@@ -6,5 +6,6 @@
 *.Arch02
 assets/*
 !assets/fonts/
+!assets/ui/
 out/*
 generated/default/*
