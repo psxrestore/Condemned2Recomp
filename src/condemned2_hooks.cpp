@@ -33,6 +33,9 @@ REX_EXTERN(__imp__SetConfigCvar);
 REX_EXTERN(__imp__GetBoolCvar);
 REX_EXTERN(__imp__SetIntCvar);
 REX_EXTERN(__imp__CCommandMgr_Process);
+
+REX_EXTERN(__imp__Game_CanSave);
+
 REX_IMPORT(SetIntCvar, SendConsoleInt, u32(u32, u32));
 REX_IMPORT(GetFloatCVar, SendConsoleFloat, double(double, u32 ));
 REX_IMPORT(GetBoolCvar, SendConsoleBool, int(u32, int));
@@ -311,6 +314,10 @@ namespace Condemned2 {
         pendingCommands[newCmd.cmd].mgr = rex::memory::load_and_swap<uint32_t>(physicalAddress);
     }
 
+    void Condemned2Hook::SendCommandCall(uint32_t strAddress, std::function<void(PPCContext&, uint8_t*)> func){
+        pendingCalls[strAddress] = func;
+    }
+
     //Pending commands
     REX_HOOK_RAW(UpdateFrame){
         rex::CallFrame frame{ctx};
@@ -329,6 +336,14 @@ namespace Condemned2 {
             const auto cmd = it->second;
             ProcessCmd(frame, base, cmd.mgr, cmd.cmd, cmd.param_1, cmd.param_2, cmd.param_3);
             g_condemned2_hooks->RemovePendingCommand(key);
+        }
+        auto& _pendingCalls = g_condemned2_hooks->GetPendingCalls();
+        while (!_pendingCalls.empty()) {
+            auto it = _pendingCalls.begin();
+            const uint32_t key = it->first;
+            const auto cmd = it->second;
+            cmd(ctx, base);
+            g_condemned2_hooks->RemovePendingCall(key);
         }
         g_condemned2_hooks->ResetScratchpad(); //Reset scratch after commands are processed.
         __imp__UpdateFrame(ctx, base);
@@ -354,6 +369,12 @@ namespace Condemned2 {
         return 0;
     }
     REX_HOOK(Game__stricmp, __stricmp)
+    
+    //Saving
+    REX_HOOK_RAW(Game_CanSave){
+        g_condemned2_hooks->SetSave(ctx.r4.u32 == 0);
+        __imp__Game_CanSave(ctx,base);
+    }
 
     //Console Vars
     /*REX_HOOK_RAW(SetConfigCvar){

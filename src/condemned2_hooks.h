@@ -36,11 +36,14 @@ namespace Condemned2 {
             };
 
             struct CCommand{
-                uint32_t cmd;
-                uint32_t param_1;
-                uint32_t param_2;
-                uint32_t param_3;
-                uint32_t mgr;
+                uint32_t cmd = 0;
+                uint32_t mgr = 0;
+                uint32_t param_1 = 0;
+                uint32_t param_2 = 0;
+                uint32_t param_3 = 0;
+                uint32_t param_4 = 0;
+                uint32_t param_5 = 0;
+                uint32_t param_6 = 0;
             };
 
             rex::memory::Memory *GetMemory() { return _memory; }
@@ -64,13 +67,18 @@ namespace Condemned2 {
             void ResetScratchpad() { scratchOffset = 0; }
 
             //Console vars
+            std::unordered_map<uint32_t, double>& GetPendingConsoleCommands() { return pendingConsoleCommands; }
+            std::unordered_map<uint32_t, CCommand>& GetPendingCommands() { return pendingCommands; }
+            std::unordered_map<uint32_t,  std::function<void(PPCContext&, uint8_t*)>>& GetPendingCalls() { return pendingCalls; }
+            
+            void SendCommandCmd(CCommand newCmd);
             uint32_t SendCommandCmd(const char* command, HookValue newValue);
             uint32_t SendCommandCmd(uint32_t strAddress, HookValue newValue);
-            void SendCommandCmd(CCommand newCmd);
-            std::unordered_map<uint32_t, double>& GetPendingConsoleCommands() { return pendingConsoleCommands; }
+            void SendCommandCall(uint32_t strAddress,  std::function<void(PPCContext&, uint8_t*)> func);
+
             void RemovePendingConsoleCommand(uint32_t cmd) { pendingConsoleCommands.erase(cmd); }
-            std::unordered_map<uint32_t, CCommand>& GetPendingCommands() { return pendingCommands; }
             void RemovePendingCommand(uint32_t cmd) { pendingCommands.erase(cmd); }
+            void RemovePendingCall(uint32_t cmd) { pendingCalls.erase(cmd); }
 
             // Memory helpers
             uint32_t CallIndirectFunction(PPCContext& parent, uint8_t* base, uint32_t address, uint32_t r3 = 0, uint32_t r4 = 0, uint32_t r5 = 0, uint32_t r6 = 0, uint32_t r7 = 0, uint32_t r8 = 0 );
@@ -99,7 +107,7 @@ namespace Condemned2 {
             static int get_int(uint8_t* physicalAddress) {
                 return rex::memory::load_and_swap<int>(physicalAddress);
             };
-  
+
         private:
             rex::Runtime* _runtime;
             rex::memory::Memory* _memory;
@@ -110,6 +118,7 @@ namespace Condemned2 {
 
             std::unordered_map<uint32_t, double> pendingConsoleCommands;
             std::unordered_map<uint32_t, CCommand> pendingCommands;
+            std::unordered_map<uint32_t, std::function<void(PPCContext&, uint8_t*)>> pendingCalls;
             std::vector<HookCallback> _initialSet = {};
             std::vector<HookCallback> _callBacks = { 
                 //{"condemned2_update_rate", 0x82013B14, 60.0f },
