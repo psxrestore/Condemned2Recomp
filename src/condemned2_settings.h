@@ -39,8 +39,12 @@ namespace Condemned2 {
                 {"vulkan_async_skip_incomplete_frames", "false"},
                 //{"async_shader_compilation", "false"},
                 //Texture cache
+                {"texture_cache_memory_limit_render_to_texture","256"},
+                {"texture_cache_memory_limit_soft","4096"},
+                {"texture_cache_memory_limit_hard","8192"},
+                {"texture_cache_memory_limit_soft_lifetime","3600"},
                 //Other
-                {"audio_maxqframes","16"},
+                {"audio_maxqframes","16"}, // Increasing might reduce performance
                 {"readback_memexport", "false"}, 
                 {"clear_memory_page_state", "true"}, //"false"}, //Required for RexCRT at times! Otherwise, disable for CPU performance!
                 {"execute_unclipped_draw_vs_on_cpu", "true"}, // Fixes black screen issue for RTV render target path in Condemned 2.

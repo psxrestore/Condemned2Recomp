@@ -1,6 +1,6 @@
 // condemned2recomp - ReXGlue Recompiled Project
 //
-// Condemned 2 Cvar Handler
+// Condemned 2 App Settings
 
 #include <rex/rex_app.h>
 #include <rex/cvar.h>
