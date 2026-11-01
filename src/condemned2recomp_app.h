@@ -22,6 +22,7 @@
 #include <condemned2_input.h>
 #include <condemned2_assets.h>
 #include <condemned2_cheats.h>
+#include <suite/extraction_rules.h>
 #include <suite/curl_getter.h>
 #include <ui/condemned2_launcher.h>
 
@@ -98,12 +99,14 @@ namespace Condemned2 {
 
                 //Pass null if not installed, otherwise pass the entire get.
                 bool requiresLauncher = !IsInstalled();
-                std::string hasAutoUpdate = rex::cvar::GetFlagByName("condemned2_auto_updater");
                 nlohmann::json parsedJson = nlohmann::json(nullptr);
-                if(!requiresLauncher && hasAutoUpdate == "true"){
-                    std::string rawJson = RexGlueSuite::CurlGetter::GetJson("https://api.github.com/repos/psxrestore/condemned2recomp/releases/latest");
-                    parsedJson = nlohmann::json::parse(rawJson);
-                    requiresLauncher = RequiresUpdate(parsedJson);
+                if(RexGlueSuite::CurlGetter::CanConnectToGithub()){
+                    std::string hasAutoUpdate = rex::cvar::GetFlagByName("condemned2_auto_updater");
+                    if(!requiresLauncher && hasAutoUpdate == "true"){
+                        std::string rawJson = RexGlueSuite::CurlGetter::GetJson("https://api.github.com/repos/psxrestore/condemned2recomp/releases/latest");
+                        parsedJson = nlohmann::json::parse(rawJson);
+                        requiresLauncher = RequiresUpdate(parsedJson);
+                    }
                 }
                 if (requiresLauncher) {
                     app_context().CallInUIThreadDeferred([this, parsedJson, resume = std::move(resume)]() mutable {

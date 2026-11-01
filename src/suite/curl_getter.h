@@ -59,5 +59,21 @@ namespace RexGlueSuite {
             if (code < 200 || code >= 300) throw std::runtime_error("HTTP " + std::to_string(code));
             return body; // You're getting CURLED, buddy!
         }
+
+        //If we can connect to Github, download updates and files from it!
+        static bool CanConnectToGithub()
+        {
+            CURL* curl = curl_easy_init();
+            if (!curl)
+                return false;
+
+            curl_easy_setopt(curl, CURLOPT_URL, "https://www.github.com");
+            curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+            curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
+            CURLcode result = curl_easy_perform(curl);
+            curl_easy_cleanup(curl);
+            return result == CURLE_OK;
+        }
     };
 }

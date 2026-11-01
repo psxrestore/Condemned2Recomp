@@ -40,7 +40,7 @@
 #include <ui/condemned2_launcher.h>
 #include <ui/condemned2_widgets.h>
 
-REXCVAR_DEFINE_BOOL(condemned2_auto_updater, true,"Condemned 2/Launcher", "Toggles auto-updates for Condemned2Recomp");
+REXCVAR_DEFINE_BOOL(condemned2_auto_updater, true, "Condemned 2/Launcher", "Toggles auto-updates for Condemned2Recomp");
 
 REXCVAR_DEFINE_STRING(condemned2_tu_patch_dl_link, "https://xboxunity.net/Resources/Lib/TitleUpdate.php?tuid=21001", "Condemned 2", "Title Update Download Link").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 REXCVAR_DEFINE_STRING(condemned2_tu_patch_filename, "TU_19KA1VF_0000004000000.00000000000G1", "Condemned 2", "Title Update Filename").lifecycle(rex::cvar::Lifecycle::kInitOnly);
@@ -64,6 +64,7 @@ REX_EXTERN(__imp__sub_822F3330);
 REX_EXTERN(__imp__sub_8241BBD0);
 REX_EXTERN(__imp__sub_8241BB18);
 REX_EXTERN(__imp__sub_822F2BA0);
+REX_EXTERN(__imp__sub_8241BD80);
 
 namespace Condemned2 {
     GameLauncherDialog* g_condemned2_launcher = nullptr;
@@ -656,87 +657,8 @@ namespace Condemned2 {
         return (fullSize > 0) ? std::clamp((float)bytesDone / (float)fullSize, 0.0f, 1.0f) : 0.0f;
     }
 
-    void GameLauncherDialog::HandleSDLKey() {
-        if(!capturingBind || bind_name.empty() || key_name.empty() ){
-            return;
-        }
-        std::string current = rex::cvar::GetFlagByName(bind_name);
-        size_t comma = current.find(',');
-        std::string bind1 = current.substr(0, comma);
-        std::string bind2 = (comma != std::string::npos) ? current.substr(comma + 1) : "";
-        if (bind_type == 0) {
-            bind1 = key_name;
-        } else {
-            bind2 = key_name;
-        }
-        std::string updated = bind1 + "," + bind2;
-        rex::cvar::SetFlagByName(bind_name, updated);
-        capturingBind = false;
-        key_name.clear();
-        bind_name.clear();
-    }
-
-    std::string GameLauncherDialog::MouseButtonName(Uint8 button) {
-        switch (button) {
-            case SDL_BUTTON_LEFT:
-                return "Mouse1";
-            case SDL_BUTTON_RIGHT:
-                return "Mouse2";
-            case SDL_BUTTON_MIDDLE:
-                return "Mouse3";
-            case SDL_BUTTON_X1:
-                return "Mouse4";
-            case SDL_BUTTON_X2:
-                return "Mouse5";
-            default:
-                return {};
-        }
-    }
-
-    std::string GameLauncherDialog::GetModifierScancode(SDL_Scancode scancode) {
-        switch (scancode) {
-            case SDL_SCANCODE_LCTRL:
-                return "Left Ctrl";
-            case SDL_SCANCODE_RCTRL:
-                return "Right Ctrl";
-            case SDL_SCANCODE_LSHIFT:
-                return "Left Shift";
-            case SDL_SCANCODE_RSHIFT:
-                return "Right Shift";
-            case SDL_SCANCODE_LALT:
-                return "Left Alt";
-            case SDL_SCANCODE_RALT:
-                return "Right Alt";
-            default:
-                return "";
-        }
-    }
-
-    bool GameLauncherDialog::WatchEventCallback(void* userdata, SDL_Event* event){
-        auto* self = static_cast<GameLauncherDialog*>(userdata);
-        if (!self || !event)
-            return true;
-
-        if(!self->capturingBind ){
-            return true;
-        }
-
-        if (event->type == SDL_EVENT_KEY_DOWN) {
-            std::string isModifierKey = GetModifierScancode(event->key.scancode);
-            if( isModifierKey.empty()){
-                auto virtual_key = rex::ui::TranslateSDLScancode(event->key.scancode);
-                self->key_name = rex::ui::VirtualKeyToString(virtual_key);
-            }else{
-                self->key_name = isModifierKey;
-            }
-        }else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && !ImGui::IsMouseReleased(ImGuiMouseButton_Left) ) {
-            self->key_name = self->MouseButtonName(event->button.button);
-        }
-        return true;
-    }
-    
-      //Launcher Dialogs
-      //Base Dialogs
+    //Launcher Dialogs
+    //Base Dialogs
     void GameLauncherDialog::ShowDialog_OnDraw(ImGuiIO& io, const LauncherDialog& newStep) {
         ImDrawList* dl = ImGui::GetWindowDrawList();
         //Header
@@ -782,7 +704,7 @@ namespace Condemned2 {
         ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
         ImGui::BeginChild("InnerWindow", newStep.windowSize, true);
         if( !newStep.body.empty()){
-                UIWidgets::AddText(newStep.body.c_str(), _loadedFonts["selawk"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 24.0f, false, true, false );
+            UIWidgets::AddText(newStep.body.c_str(), _loadedFonts["selawk"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 24.0f, false, true, false );
             if( newStep.showError ){
                 UIWidgets::AddText(GetErrorSnapshot().c_str(), _loadedFonts["selawk"], ImVec2(128, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 24.0f, false, true, false );
             }
@@ -876,7 +798,7 @@ namespace Condemned2 {
             std::function<void(PPCContext&, uint8_t*)> restartLevel = [](PPCContext& ctx, uint8_t* base)
             {
                 ctx.r3.u64 = 0x8293e468; 
-                ctx.r4.u64 = 0x2099a160; 
+                ctx.r4.u32 = 0x2099a160; 
                 __imp__sub_8241BBD0(ctx,base);
             };
             _hook->SendCommandCall(0x8241BBD0,restartLevel);
@@ -1111,6 +1033,85 @@ namespace Condemned2 {
     #endif
     }
 
+    void GameLauncherDialog::HandleSDLKey() {
+        if(!capturingBind || bind_name.empty() || key_name.empty() ){
+            return;
+        }
+        std::string current = rex::cvar::GetFlagByName(bind_name);
+        size_t comma = current.find(',');
+        std::string bind1 = current.substr(0, comma);
+        std::string bind2 = (comma != std::string::npos) ? current.substr(comma + 1) : "";
+        if (bind_type == 0) {
+            bind1 = key_name;
+        } else {
+            bind2 = key_name;
+        }
+        std::string updated = bind1 + "," + bind2;
+        rex::cvar::SetFlagByName(bind_name, updated);
+        capturingBind = false;
+        key_name.clear();
+        bind_name.clear();
+    }
+
+    std::string GameLauncherDialog::MouseButtonName(Uint8 button) {
+        switch (button) {
+            case SDL_BUTTON_LEFT:
+                return "Mouse1";
+            case SDL_BUTTON_RIGHT:
+                return "Mouse2";
+            case SDL_BUTTON_MIDDLE:
+                return "Mouse3";
+            case SDL_BUTTON_X1:
+                return "Mouse4";
+            case SDL_BUTTON_X2:
+                return "Mouse5";
+            default:
+                return {};
+        }
+    }
+
+    std::string GameLauncherDialog::GetModifierScancode(SDL_Scancode scancode) {
+        switch (scancode) {
+            case SDL_SCANCODE_LCTRL:
+                return "Left Ctrl";
+            case SDL_SCANCODE_RCTRL:
+                return "Right Ctrl";
+            case SDL_SCANCODE_LSHIFT:
+                return "Left Shift";
+            case SDL_SCANCODE_RSHIFT:
+                return "Right Shift";
+            case SDL_SCANCODE_LALT:
+                return "Left Alt";
+            case SDL_SCANCODE_RALT:
+                return "Right Alt";
+            default:
+                return "";
+        }
+    }
+
+    bool GameLauncherDialog::WatchEventCallback(void* userdata, SDL_Event* event){
+        auto* self = static_cast<GameLauncherDialog*>(userdata);
+        if (!self || !event)
+            return true;
+
+        if(!self->capturingBind ){
+            return true;
+        }
+
+        if (event->type == SDL_EVENT_KEY_DOWN) {
+            std::string isModifierKey = GetModifierScancode(event->key.scancode);
+            if( isModifierKey.empty()){
+                auto virtual_key = rex::ui::TranslateSDLScancode(event->key.scancode);
+                self->key_name = rex::ui::VirtualKeyToString(virtual_key);
+            }else{
+                self->key_name = isModifierKey;
+            }
+        }else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && !ImGui::IsMouseReleased(ImGuiMouseButton_Left) ) {
+            self->key_name = self->MouseButtonName(event->button.button);
+        }
+        return true;
+    }
+    
     REX_HOOK_RAW(sub_822F3330){
         REXLOG_INFO("[condemned2_launcher][sub_822F3330] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
         __imp__sub_822F3330(ctx,base);
@@ -1127,5 +1128,11 @@ namespace Condemned2 {
         REXLOG_INFO("[condemned2_launcher][sub_822F2BA0] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
         __imp__sub_822F2BA0(ctx,base);
     }
-
+    REX_HOOK_RAW(sub_8241BD80){
+        int address = ctx.r4.u32;
+        __imp__sub_8241BD80(ctx,base);
+        if(g_condemned2_launcher){
+            g_condemned2_launcher->SetMenuAddress(address);
+        }
+    }
 };

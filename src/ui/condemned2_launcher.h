@@ -113,13 +113,6 @@ namespace Condemned2 {
       std::string GetLogSnapshot();
       std::string GetErrorSnapshot();
 
-      void ClearLog();
-      float GetCurrentProgress();
-      void HandleSDLKey();
-      std::string MouseButtonName(Uint8 button);
-      static std::string GetModifierScancode(SDL_Scancode scancode);
-      static bool WatchEventCallback(void* userdata, SDL_Event* event);
-
       //Launcher Dialogs
       //Base Dialogs
       void ShowDialog_OnDraw(ImGuiIO& io, const LauncherDialog& newStep);
@@ -132,6 +125,17 @@ namespace Condemned2 {
       void ShowDialog_CvarCategory(ImGuiIO& io, std::string subCategory);
       uint64_t current_pid();
 
+      //Backend
+      //Binds
+      void ClearLog();
+      float GetCurrentProgress();
+      void HandleSDLKey();
+      std::string MouseButtonName(Uint8 button);
+      static std::string GetModifierScancode(SDL_Scancode scancode);
+      static bool WatchEventCallback(void* userdata, SDL_Event* event);
+
+      //Commands
+      void SetMenuAddress(uint32_t newAddress) { menuAddress = newAddress; }
       Condemned2::Condemned2Hook *GetHook() { return _hook; }
 
       private:
@@ -183,6 +187,7 @@ namespace Condemned2 {
         std::string currentWidgetId;
         std::string nextWidgetId;
         std::string currentLabel;
+        uint32_t menuAddress;
 
         //Paths
         //Animated logo
