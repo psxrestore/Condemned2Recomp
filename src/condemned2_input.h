@@ -17,6 +17,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include <condemned2_hooks.h>
+
 namespace rex::input::condemned2input{
 
    enum class MouseLookType {
@@ -92,7 +94,10 @@ namespace rex::input::condemned2input{
          
          bool IsDebugging() { return isDebugging; }
          bool IsDebuggingFrames() { return isDebuggingFrames; } 
+
+         void SetHook(Condemned2::Condemned2Hook *hooks){_hooks = hooks;}
       private:
+         Condemned2::Condemned2Hook *_hooks;
          uint32_t packet_number_ = 0;
 
          //Window management
@@ -141,6 +146,7 @@ namespace rex::input::condemned2input{
             "condemned2_input_drop",
             "condemned2_input_throw", 
             "condemned2_input_taser",
+            "condemned2_input_slowmo",
             "condemned2_input_forensics", 
             "condemned2_input_tool_uv", 
             "condemned2_input_tool_camera",
@@ -156,5 +162,5 @@ namespace rex::input::condemned2input{
          };
    };
 
-   std::unique_ptr<InputSystem> CreateInputSystem(bool tool_mode);
+   std::unique_ptr<InputSystem> CreateInputSystem(bool tool_mode, Condemned2::Condemned2Hook *hook);
 }  // namespace rex::input::condemned2input

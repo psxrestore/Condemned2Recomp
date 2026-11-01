@@ -25,6 +25,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include <condemned2_hooks.h>
 #include <condemned2_input.h>
 
 // Native PC Binds
@@ -44,6 +45,7 @@ REXCVAR_DEFINE_STRING(condemned2_input_kick, "Space", "Condemned 2/Input/Keyboar
 REXCVAR_DEFINE_STRING(condemned2_input_taser, "T", "Condemned 2/Input/Keyboard", "Taser");
 REXCVAR_DEFINE_STRING(condemned2_input_throw, "G", "Condemned 2/Input/Keyboard", "Throw Item/Weapon");
 REXCVAR_DEFINE_STRING(condemned2_input_drop, "B", "Condemned 2/Input/Keyboard", "Drop Item/Weapon, Holster Weapon");
+REXCVAR_DEFINE_STRING(condemned2_input_slowmo, "M", "Condemned 2/Input/Keyboard", "Activates Slow-mo");
 
 REXCVAR_DEFINE_STRING(condemned2_input_forensics, "R", "Condemned 2/Input/Keyboard", "Investigate/Use Forensic Tools");
 REXCVAR_DEFINE_STRING(condemned2_input_tool_uv, "1", "Condemned 2/Input/Keyboard", "UV Light");
@@ -212,7 +214,7 @@ namespace rex::input::condemned2input {
     }
   }
 
-  std::unique_ptr<InputSystem> CreateInputSystem(bool tool_mode) {
+  std::unique_ptr<InputSystem> CreateInputSystem(bool tool_mode, Condemned2::Condemned2Hook *hook) {
     auto input = std::make_unique<InputSystem>(nullptr);
     //Used for gamepad!
     auto sdl_driver = std::make_unique<sdl::SDLInputDriver>(nullptr, 0);
@@ -224,6 +226,7 @@ namespace rex::input::condemned2input {
     //Condemned 2 Custom Input Driver
     auto cndmned2_driver = std::make_unique<rex::input::condemned2input::Condemned2InputDriver>(nullptr, 0); 
     if (cndmned2_driver->Setup() == X_STATUS_SUCCESS) {
+      cndmned2_driver->SetHook(hook);
       input->AddDriver(std::move(cndmned2_driver));
       REXLOG_INFO("[condemned2_input] Condemned 2 Input Driver Initialized");
     }
@@ -424,6 +427,13 @@ namespace rex::input::condemned2input {
     if(IsDown(activeBinds["condemned2_input_hook_attacks"])){
       NativeKeyPress({0x42, 0xa8});
     }
+    if(!IsDown(activeBinds["condemned2_input_slowmo"]) && activeBinds["condemned2_input_slowmo"].prev){
+      _hooks->SendCommandCmd({_hooks->AllocateHeapForString("msg Player (slowmo off)"), 0, 0, 0});
+    }
+    if(Pressed(activeBinds["condemned2_input_slowmo"]) ){
+      _hooks->SendCommandCmd({_hooks->AllocateHeapForString("msg Player (slowmo on default)"), 0, 0, 0});
+    } 
+
     Held({activeBinds["condemned2_input_objectives"]}, {0x4f, 0x4e} );
     Held({activeBinds["condemned2_input_forensics"]}, {0x74, 0x71} );
     if(Pressed(activeBinds["condemned2_input_tool_take_picture"])){

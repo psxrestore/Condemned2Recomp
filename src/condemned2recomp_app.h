@@ -39,9 +39,15 @@ namespace Condemned2 {
                 _graphics = new rex::graphics::condemned2graphics::Condemned2Graphics(_hooks);
                 _assets = new Condemned2::Condemned2Assets(_hooks);
                 _cheats = new Condemned2::Condemned2Cheats(_hooks, _assets);
+                
+                //Input
+                auto backend = [hooks = &_hooks](bool _tool_mode) -> std::unique_ptr<::rex::system::IInputSystem>
+                {
+                    return rex::input::condemned2input::CreateInputSystem(_tool_mode, *hooks);
+                };
+                config.input_factory = backend;
 
                 config.gpu_plugin = "xenos";
-                config.input_factory = REX_INPUT_BACKEND(rex::input::condemned2input::CreateInputSystem);
                 //Force high resolution timer for Windows
                 #if REX_PLATFORM_WIN32
                     timeBeginPeriod(1);
@@ -57,7 +63,7 @@ namespace Condemned2 {
                 _graphics->InitializeGraphics();
                 _cheats->InitializeCheats();
                 _hooks->InitializeCallbacks();
-            }
+            }   
 
             void OnShutdown() override {
                 //Force high resolution timer for Windows
