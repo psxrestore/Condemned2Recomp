@@ -580,16 +580,6 @@ namespace Condemned2 {
                     currentWidgetId = nextWidgetId;
                     bloodAlpha = 0;
                     scrapeAlpha = 0.1f;
-
-                    std::function<void(PPCContext&, uint8_t*)> uiSoundEffect = [](PPCContext& ctx, uint8_t* base)
-                    {
-                        ctx.r3.u64 = 0x82934780;
-                        ctx.r4.u32 = 0x208d2a40;
-                        ctx.r5.u32 = 0x7018b840;
-                        ctx.r6.u32 = 0x1;
-                        __imp__sub_822F3330(ctx, base);
-                    };
-                    _hook->SendCommandCall(uiSoundEffect);
                 }
                 if (bloodIcon) {
                     bloodAlpha = ImLerp(bloodAlpha, 1.0f, io.DeltaTime * 3.0f);
