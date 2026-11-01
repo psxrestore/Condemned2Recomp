@@ -60,6 +60,11 @@ REXCVAR_DEFINE_STRING(condemned2_quickbms_script_filename, "condemned2.bms", "Co
 REXCVAR_DEFINE_STRING(condemned2_quickbms_script_url, "https://github.com/psxrestore/QuickBMS-For-Recomps/releases/download/0.12.0/condemned2.bms", "Condemned 2", "QuickBMS Script Download").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 REXCVAR_DEFINE_STRING(condemned2_quickbms_script_hash, "0acc7be36f094fe06285b05a04e8f6af78538e975309feb2b0393efc1df33a64", "Condemned 2", "QuickBMS Script Hash").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 
+REX_EXTERN(__imp__sub_822F3330);
+REX_EXTERN(__imp__sub_8241BBD0);
+REX_EXTERN(__imp__sub_8241BB18);
+REX_EXTERN(__imp__sub_822F2BA0);
+
 namespace Condemned2 {
     GameLauncherDialog* g_condemned2_launcher = nullptr;
     GameLauncherDialog::GameLauncherDialog(rex::ui::ImGuiDrawer* drawer, rex::ui::ImmediateDrawer* immediate_drawer, Condemned2::Condemned2Hook *hook, const rex::PathConfig& paths, std::function<void(rex::PathConfig)> resume, std::function<void()> onClose, 
@@ -479,30 +484,30 @@ namespace Condemned2 {
         }
     }
 
-      GameLauncherDialog::~GameLauncherDialog(){
+    GameLauncherDialog::~GameLauncherDialog(){
         SDL_RemoveEventWatch(&GameLauncherDialog::WatchEventCallback, this);
-        
+    
         if (workerThread.joinable()) {
-          workerThread.join();
+            workerThread.join();
         }
 
         //Remove temp folder!
         if (std::filesystem::exists(_tempPath) && std::filesystem::is_directory(_tempPath)){
-          std::filesystem::remove_all(_tempPath);
+            std::filesystem::remove_all(_tempPath);
         }
-      }
+    }
 
-      void GameLauncherDialog::CloseDialog(){
+    void GameLauncherDialog::CloseDialog(){
         if (_resume) {
-          _resume(_paths);
-          _resume = nullptr;
+            _resume(_paths);
+            _resume = nullptr;
         }
         if (_onClose) {
-          _onClose();
+            _onClose();
         }
-      }
+    }
 
-      void GameLauncherDialog::FinishInstallation(bool updateConfig){
+    void GameLauncherDialog::FinishInstallation(bool updateConfig){
         if (std::filesystem::exists(_tempPath) && std::filesystem::is_directory(_tempPath)){
             std::filesystem::remove_all(_tempPath);
         }
@@ -522,9 +527,9 @@ namespace Condemned2 {
             }
         }
         CloseDialog();
-      }
+    }
       
-      void GameLauncherDialog::SetState(LauncherState newState){
+    void GameLauncherDialog::SetState(LauncherState newState){
         if (workerThread.joinable()) {
             workerThread.join();
         }
@@ -536,9 +541,9 @@ namespace Condemned2 {
         if (auto it = stateTable.find(curState); it != stateTable.end()) {
             if (it->second.onStart) it->second.onStart();
         }
-      }
+    }
 
-      void GameLauncherDialog::OnDraw(ImGuiIO& io) {
+    void GameLauncherDialog::OnDraw(ImGuiIO& io) {
         LauncherState pending = pendingState.exchange(LauncherState::None);
         if (pending != LauncherState::None) {
             SetState(pending);
@@ -575,6 +580,16 @@ namespace Condemned2 {
                     currentWidgetId = nextWidgetId;
                     bloodAlpha = 0;
                     scrapeAlpha = 0.1f;
+
+                    std::function<void(PPCContext&, uint8_t*)> uiSoundEffect = [](PPCContext& ctx, uint8_t* base)
+                    {
+                        ctx.r3.u64 = 0x82934780;
+                        ctx.r4.u32 = 0x208d2a40;
+                        ctx.r5.u32 = 0x7018b840;
+                        ctx.r6.u32 = 0x1;
+                        __imp__sub_822F3330(ctx, base);
+                    };
+                    _hook->SendCommandCall(uiSoundEffect);
                 }
                 if (bloodIcon) {
                     bloodAlpha = ImLerp(bloodAlpha, 1.0f, io.DeltaTime * 3.0f);
@@ -867,6 +882,24 @@ namespace Condemned2 {
         if (UIWidgets::AddMenuButton("Resume", "Resume playing.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             CloseDialog();
         }
+        if (UIWidgets::AddMenuButton("Restart Mission", "Restart your mission.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+            std::function<void(PPCContext&, uint8_t*)> restartLevel = [](PPCContext& ctx, uint8_t* base)
+            {
+                ctx.r3.u64 = 0x8293e468; 
+                ctx.r4.u64 = 0x2099a160; 
+                __imp__sub_8241BBD0(ctx,base);
+            };
+            _hook->SendCommandCall(0x8241BBD0,restartLevel);
+        }
+        if (UIWidgets::AddMenuButton("Restart from Checkpoint", "Restart from last checkpoint.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+            std::function<void(PPCContext&, uint8_t*)> restartCheckpoint = [](PPCContext& ctx, uint8_t* base)
+            {
+                ctx.r3.u64 = 0x8293e468;
+                ctx.r4.u32 = 0x2099da40;
+                __imp__sub_8241BB18(ctx,base);
+            };
+            _hook->SendCommandCall(0x8241BB18,restartCheckpoint);
+        }
         if (UIWidgets::AddMenuButton("Save", "Save your progress in the current mission.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             if(_hook){
                 _hook->SendCommandCmd({_hook->AllocateHeapForString("msg system CHECKPOINTSAVE"), 0, 0, 0});
@@ -877,6 +910,15 @@ namespace Condemned2 {
             highlightIconPos = ImVec2(0,0); //Reset icon position.
             highlightIconLerpPos = ImVec2(0,0); 
             currentLabel = "";
+        }
+        if (UIWidgets::AddMenuButton("Quit to Main Menu", "Quit your current session and return to the main menu.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+            std::function<void(PPCContext&, uint8_t*)> restartQuitToMenu = [](PPCContext& ctx, uint8_t* base)
+            {
+                ctx.r3.u64 = 0x82934780;
+                ctx.r4.u32 = 0x208cf160;
+                __imp__sub_822F2BA0(ctx,base);
+            };
+            _hook->SendCommandCall(0x822F2BA0,restartQuitToMenu);
         }
         if (UIWidgets::AddMenuButton("Quit to Desktop", "Quit Condemned2Recomp and resume to desktop.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::Exit;
@@ -1078,4 +1120,22 @@ namespace Condemned2 {
         return 0;
     #endif
     }
+
+    REX_HOOK_RAW(sub_822F3330){
+        REXLOG_INFO("[condemned2_launcher][sub_822F3330] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
+        __imp__sub_822F3330(ctx,base);
+    }
+    REX_HOOK_RAW(sub_8241BB18){
+        REXLOG_INFO("[condemned2_launcher][sub_8241BB18] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
+        __imp__sub_8241BB18(ctx,base);
+    }
+    REX_HOOK_RAW(sub_8241BBD0){
+        REXLOG_INFO("[condemned2_launcher][sub_8241BBD0] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
+        __imp__sub_8241BBD0(ctx,base);
+    }
+    REX_HOOK_RAW(sub_822F2BA0){
+        REXLOG_INFO("[condemned2_launcher][sub_822F2BA0] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
+        __imp__sub_822F2BA0(ctx,base);
+    }
+
 };

@@ -77,7 +77,7 @@ namespace Condemned2 {
       static bool AddMenuButton(const char* label, const char* newLabel, ImFont* font, 
         ImVec2* iconPos = nullptr, ImVec2* jitterBgPos = nullptr, std::string* widgetId = nullptr, std::string* menuLabel = nullptr, 
         std::unique_ptr<rex::ui::ImmediateTexture> *bgImg = nullptr, float* bgImgAlpha = nullptr,
-        ImVec2 size = ImVec2(256, 96), float fontSize = 64.0f, const char *id = nullptr){
+        ImVec2 size = ImVec2(256, 72), float fontSize = 64.0f, const char *id = nullptr){
         std::string widget_id = std::string("##") + (id ? id : label);
         ImGui::PushID(widget_id.c_str());
         ImGui::InvisibleButton(widget_id.c_str(), size);     
