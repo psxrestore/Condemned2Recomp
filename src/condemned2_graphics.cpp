@@ -51,7 +51,7 @@
     "9:16",
     "2.39:1"
 });*/
-REXCVAR_DEFINE_DOUBLE(condemned2_fov, 1.0, "Condemned 2/Graphics", "Camera Fov").range(0.75f, 1.25f);
+REXCVAR_DEFINE_DOUBLE(condemned2_fov, 1.0, "Condemned 2/Graphics", "Camera Fov").range(0.75f, 1.5f);
 REXCVAR_DEFINE_DOUBLE(condemned2_film_grain, 0.2, "Condemned 2/Graphics", "Film Grain").range(0.0f, 1.0f);
 REXCVAR_DEFINE_DOUBLE(condemned2_saturation, 0.3, "Condemned 2/Graphics", "Film Grain").range(0.0f, 1.0f);
 REXCVAR_DEFINE_BOOL(condemned2_screen_effects, true, "Condemned 2/Graphics", "Screen Effects");
@@ -80,7 +80,7 @@ namespace rex::graphics::condemned2graphics {
         //_hook->AddInitialHook({"condemned2_far_z", 0x82925E04, 1000.0f });
         //_hook->AddInitialHook({"condemned2_trilinear", 0x82925DBC, 1.0f });
         //_hook->AddInitialHook({"condemned2_anisotropic", 0x82925DD4, 1.0f });
-        _hook->AddHook({"condemned2_fov", 0x8209C2AC, 0.01745329238474369f, 0.75f, 1.25f, true }); // Scales default FOV value!
+        _hook->AddHook({"condemned2_fov", 0x8209C2AC, 0.01745329238474369f, 0.75f, 1.5f, true }); // Scales default FOV value!
         
         //Screen Effects
         rex::cvar::RegisterChangeCallback("condemned2_screen_effects", [&](std::string_view name, std::string_view new_value) {
