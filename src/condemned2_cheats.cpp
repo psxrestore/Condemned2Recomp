@@ -27,6 +27,7 @@ REX_EXTERN(__imp__Player_HasUpgrade);
 REX_EXTERN(__imp__GunAccuracyMultiplier);
 REX_EXTERN(__imp__RandomAccuracyKnockoff);
 REX_EXTERN(__imp__DefaultWeapon);
+REX_EXTERN(__imp__GetLanguage);
 
 //Cheats
 REXCVAR_DEFINE_BOOL(condemned2_cheat_fps_mode, false, "Condemned 2/Extras/Unlockables", "FPS Mode");
@@ -36,6 +37,7 @@ REXCVAR_DEFINE_BOOL(condemned2_cheat_top_gun_accuracy, false, "Condemned 2/Extra
 REXCVAR_DEFINE_BOOL(condemned2_cheat_god_mode, false, "Condemned 2/Extras/Unlockables", "God Mode");
 //QoL
 //REXCVAR_DEFINE_BOOL(condemned2_qol_skip_intro_movies, false, "Condemned 2/Extras/QoL Improvements", "Skip Intro");
+REXCVAR_DEFINE_STRING(condemned2_qol_game_language, "English", "Condemned 2/Extras/QoL Improvements", "Game Language").allowed({"English","French","Italian","Spanish"});
 REXCVAR_DEFINE_BOOL(condemned2_qol_skip_ingame_movies, false, "Condemned 2/Extras/QoL Improvements", "Skip In-Game Movies");
 REXCVAR_DEFINE_DOUBLE(condemned2_flashlight_intensity, 1.0, "Condemned 2/Extras/QoL Improvements", "Flashlight Intensity").range(0.5f, 4.0f);
 //Console
@@ -232,5 +234,13 @@ namespace Condemned2 {
                 }
             }
         }
+    }
+    REX_HOOK_RAW(GetLanguage){
+        const auto& language = rex::cvar::GetFlagByName("condemned2_qol_game_language");
+        if (language == "English") ctx.r3.u64 = 0x8206c784;
+        else if (language == "French")  ctx.r3.u64 = 0x8206c760;
+        else if (language == "Italian") ctx.r3.u64 = 0x8206c73c;
+        else if (language == "Spanish") ctx.r3.u64 = 0x8206c718;
+        else ctx.r3.u64 = 0x8206c6fc;
     }
 }  // namespace Condemned2

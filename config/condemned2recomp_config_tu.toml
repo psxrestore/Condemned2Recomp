@@ -17,6 +17,12 @@
 0x824262C8 = {name="Player_UserSettings"}
 0x823C76A8 = {name="Player_ApplySettings"} 
 0x82221E40 = {name="ParseSWF"}
+0x826F9858 = {name="GetLanguage"}
+
+#UI
+#0x822F3330 = {name="UI_PlaySound"}
+#0x8241BBD0 = {name="Menu_RestartLevel"}
+#0x8241BB18 = {name="Menu_StartCheckpoint"}
 
 # Level of Detail
 0x8212A400 = {name="ApplyDisplaySettings"}
@@ -63,7 +69,6 @@
 0x824384F0 = {name="BodyCapFunction"} # Body capsule physics
 0x826A5508 = {name="OnAttackEffect"} # Seems to be involved in whether there's gore or just a decal.
 0x826A26D8 = {name="DefaultWeapon"}
-0x823352B0 = {name="Game_CanSave"}
 
 # Bundles
 0x82326D08 = {name="Game_InitBundles"}
