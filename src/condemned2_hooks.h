@@ -107,7 +107,6 @@ namespace Condemned2 {
             static int get_int(uint8_t* physicalAddress) {
                 return rex::memory::load_and_swap<int>(physicalAddress);
             };
-
         private:
             rex::Runtime* _runtime;
             rex::memory::Memory* _memory;

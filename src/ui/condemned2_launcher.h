@@ -123,6 +123,7 @@ namespace Condemned2 {
       void ShowDialog_ApplyButton(ImGuiIO& io);
       std::string TrimSubCategory(std::string_view value);
       void ShowDialog_CvarCategory(ImGuiIO& io, std::string subCategory);
+      void ResetAnimation(bool resetPos = false);
       uint64_t current_pid();
 
       //Backend
@@ -135,7 +136,6 @@ namespace Condemned2 {
       static bool WatchEventCallback(void* userdata, SDL_Event* event);
 
       //Commands
-      void SetMenuAddress(uint32_t newAddress) { menuAddress = newAddress; }
       Condemned2::Condemned2Hook *GetHook() { return _hook; }
 
       private:
@@ -183,11 +183,12 @@ namespace Condemned2 {
         float bloodAlpha = 0.0f;
         float scrapeAlpha = 0.1f;
         double testPosUpdate = 0.0;
+        double gameItemUpdate = 0.0f;
         ImVec2 jitterTextPos{};
         std::string currentWidgetId;
         std::string nextWidgetId;
         std::string currentLabel;
-        uint32_t menuAddress;
+        int currentGameState;
 
         //Paths
         //Animated logo

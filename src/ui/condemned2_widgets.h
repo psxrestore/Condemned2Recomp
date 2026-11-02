@@ -77,7 +77,7 @@ namespace Condemned2 {
       static bool AddMenuButton(const char* label, const char* newLabel, ImFont* font, 
         ImVec2* iconPos = nullptr, ImVec2* jitterBgPos = nullptr, std::string* widgetId = nullptr, std::string* menuLabel = nullptr, 
         std::unique_ptr<rex::ui::ImmediateTexture> *bgImg = nullptr, float* bgImgAlpha = nullptr,
-        ImVec2 size = ImVec2(256, 72), float fontSize = 64.0f, const char *id = nullptr){
+        ImVec2 size = ImVec2(512, 72), float fontSize = 64.0f, const char *id = nullptr){
         std::string widget_id = std::string("##") + (id ? id : label);
         ImGui::PushID(widget_id.c_str());
         ImGui::InvisibleButton(widget_id.c_str(), size);     
@@ -101,8 +101,8 @@ namespace Condemned2 {
         }
         if(bgImg != nullptr && bgImgAlpha != nullptr){
            dl->AddImage(reinterpret_cast<ImTextureID>(bgImg->get()), 
-              ImVec2(p2.x - 64.0f, p2.y - size.y), 
-              ImVec2(p2.x + 256, p2.y + size.y), 
+              ImVec2(p2.x, p2.y - size.y), 
+              ImVec2(p2.x + 320, p2.y + size.y), 
               ImVec2(0.0f, 0.0f),ImVec2(1.0f, 1.0f),
               ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, (!isNotWidget ? *bgImgAlpha : 0.1f))));
         } 

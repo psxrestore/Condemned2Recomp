@@ -64,7 +64,6 @@ REX_EXTERN(__imp__sub_822F3330);
 REX_EXTERN(__imp__sub_8241BBD0);
 REX_EXTERN(__imp__sub_8241BB18);
 REX_EXTERN(__imp__sub_822F2BA0);
-REX_EXTERN(__imp__sub_8241BD80);
 
 namespace Condemned2 {
     GameLauncherDialog* g_condemned2_launcher = nullptr;
@@ -579,8 +578,7 @@ namespace Condemned2 {
             if(isHighlighted){
                 if(nextWidgetId != currentWidgetId){
                     currentWidgetId = nextWidgetId;
-                    bloodAlpha = 0;
-                    scrapeAlpha = 0.1f;
+                    ResetAnimation();
                 }
                 if (bloodIcon) {
                     bloodAlpha = ImLerp(bloodAlpha, 1.0f, io.DeltaTime * 3.0f);
@@ -794,43 +792,60 @@ namespace Condemned2 {
         if (UIWidgets::AddMenuButton("Resume", "Resume playing.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             CloseDialog();
         }
-        if (UIWidgets::AddMenuButton("Restart Mission", "Restart your mission.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
-            std::function<void(PPCContext&, uint8_t*)> restartLevel = [](PPCContext& ctx, uint8_t* base)
-            {
-                ctx.r3.u64 = 0x8293e468; 
-                ctx.r4.u32 = 0x2099a160; 
-                __imp__sub_8241BBD0(ctx,base);
-            };
-            _hook->SendCommandCall(0x8241BBD0,restartLevel);
+
+        //In-game only menu items
+        bool isInGameMode = false;
+        uint8_t* gameState = _hook->GetMemory()->TranslateVirtual<uint8_t*>(0x82936328);
+        uint8_t* loadState = _hook->GetMemory()->TranslateVirtual<uint8_t*>(0x829363e4);
+        if(gameState && loadState){
+            if(gameItemUpdate <= ImGui::GetTime()){
+                int newGameState = _hook->get_int(gameState);
+                if(newGameState != currentGameState || _hook->get_int(loadState) != 0 ){
+                    currentGameState = newGameState;
+                    gameItemUpdate = ImGui::GetTime() + 1.0f;
+                    ResetAnimation(true);
+                }else{
+                    isInGameMode = ( currentGameState == 2 );
+                }
+            }
         }
-        if (UIWidgets::AddMenuButton("Restart from Checkpoint", "Restart from last checkpoint.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
-            std::function<void(PPCContext&, uint8_t*)> restartCheckpoint = [](PPCContext& ctx, uint8_t* base)
-            {
-                ctx.r3.u64 = 0x8293e468;
-                ctx.r4.u32 = 0x2099da40;
-                __imp__sub_8241BB18(ctx,base);
-            };
-            _hook->SendCommandCall(0x8241BB18,restartCheckpoint);
-        }
-        if (UIWidgets::AddMenuButton("Save", "Save your progress in the current mission.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
-            if(_hook){
-                _hook->SendCommandCmd({_hook->AllocateHeapForString("msg system CHECKPOINTSAVE"), 0, 0, 0});
+        if(isInGameMode){
+            /*if (UIWidgets::AddMenuButton("Restart Mission", "Restart your mission.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+                std::function<void(PPCContext&, uint8_t*)> restartLevel = [this](PPCContext& ctx, uint8_t* base)
+                {
+                    ctx.r3.u64 = 0x8293e468; 
+                    ctx.r4.u64 = menuAddress; 
+                    __imp__sub_8241BBD0(ctx,base);
+                };
+                _hook->SendCommandCall(0x8241A468,restartLevel);
+            }*/
+            if (UIWidgets::AddMenuButton("Quick load", "Restart from last checkpoint or quick save.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+                std::function<void(PPCContext&, uint8_t*)> restartCheckpoint = [this](PPCContext& ctx, uint8_t* base)
+                {
+                    ctx.r3.u64 = 0x8293e468;
+                    __imp__sub_8241BB18(ctx,base);
+                };
+                _hook->SendCommandCall(0x8241BB18,restartCheckpoint);
+            }
+            if (UIWidgets::AddMenuButton("Quick save", "Save your progress in the current mission.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+                if(_hook){
+                    _hook->SendCommandCmd({_hook->AllocateHeapForString("msg system CHECKPOINTSAVE"), 0, 0, 0});
+                }
             }
         }
         if (UIWidgets::AddMenuButton("PC Settings", "Configure video and input settings.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::PCSettings;
-            highlightIconPos = ImVec2(0,0); //Reset icon position.
-            highlightIconLerpPos = ImVec2(0,0); 
-            currentLabel = "";
+            ResetAnimation(true);
         }
-        if (UIWidgets::AddMenuButton("Quit to Main Menu", "Quit your current session and return to the main menu.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
-            std::function<void(PPCContext&, uint8_t*)> restartQuitToMenu = [](PPCContext& ctx, uint8_t* base)
-            {
-                ctx.r3.u64 = 0x82934780;
-                ctx.r4.u32 = 0x208cf160;
-                __imp__sub_822F2BA0(ctx,base);
-            };
-            _hook->SendCommandCall(0x822F2BA0,restartQuitToMenu);
+        if(isInGameMode){
+            if (UIWidgets::AddMenuButton("Quit to Main Menu", "Quit your current session and return to the main menu.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+                std::function<void(PPCContext&, uint8_t*)> restartQuitToMenu = [this](PPCContext& ctx, uint8_t* base)
+                {
+                    ctx.r3.u64 = 0x82934780;
+                    __imp__sub_822F2BA0(ctx,base);
+                };
+                _hook->SendCommandCall(0x822F2BA0,restartQuitToMenu);
+            }
         }
         if (UIWidgets::AddMenuButton("Quit to Desktop", "Quit Condemned2Recomp and resume to desktop.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::Exit;
@@ -864,9 +879,7 @@ namespace Condemned2 {
 
         if (UIWidgets::AddMenuButton("Back", "Go back to the PC menu.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::PCMenu;
-            highlightIconPos = ImVec2(0,0); //Reset icon position.
-            highlightIconLerpPos = ImVec2(0,0); 
-            currentLabel = "";
+            ResetAnimation(true);
         }
         ImGui::EndChild();
         ImGui::PopStyleColor();
@@ -1020,6 +1033,17 @@ namespace Condemned2 {
         }
         ImGui::EndChild();
     }
+    
+    void GameLauncherDialog::ResetAnimation(bool resetPos){
+        bloodAlpha = 0;
+        scrapeAlpha = 0.1f;
+        currentLabel = "";
+        if(resetPos){
+            currentWidgetId = "";
+            highlightIconPos = ImVec2(0,0);
+            highlightIconLerpPos = ImVec2(0,0); 
+        }
+    }
 
     //Used for the updater!!!
     uint64_t GameLauncherDialog::current_pid()
@@ -1115,24 +1139,5 @@ namespace Condemned2 {
     REX_HOOK_RAW(sub_822F3330){
         REXLOG_INFO("[condemned2_launcher][sub_822F3330] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
         __imp__sub_822F3330(ctx,base);
-    }
-    REX_HOOK_RAW(sub_8241BB18){
-        REXLOG_INFO("[condemned2_launcher][sub_8241BB18] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
-        __imp__sub_8241BB18(ctx,base);
-    }
-    REX_HOOK_RAW(sub_8241BBD0){
-        REXLOG_INFO("[condemned2_launcher][sub_8241BBD0] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
-        __imp__sub_8241BBD0(ctx,base);
-    }
-    REX_HOOK_RAW(sub_822F2BA0){
-        REXLOG_INFO("[condemned2_launcher][sub_822F2BA0] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
-        __imp__sub_822F2BA0(ctx,base);
-    }
-    REX_HOOK_RAW(sub_8241BD80){
-        int address = ctx.r4.u32;
-        __imp__sub_8241BD80(ctx,base);
-        if(g_condemned2_launcher){
-            g_condemned2_launcher->SetMenuAddress(address);
-        }
     }
 };

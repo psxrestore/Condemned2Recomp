@@ -34,8 +34,6 @@ REX_EXTERN(__imp__GetBoolCvar);
 REX_EXTERN(__imp__SetIntCvar);
 REX_EXTERN(__imp__CCommandMgr_Process);
 
-REX_EXTERN(__imp__Game_CanSave);
-
 REX_IMPORT(SetIntCvar, SendConsoleInt, u32(u32, u32));
 REX_IMPORT(GetFloatCVar, SendConsoleFloat, double(double, u32 ));
 REX_IMPORT(GetBoolCvar, SendConsoleBool, int(u32, int));
