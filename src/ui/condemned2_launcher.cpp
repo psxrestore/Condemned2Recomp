@@ -573,8 +573,14 @@ namespace Condemned2 {
                 ImVec2(0.0f, 0.0f),ImVec2(1.0f, 1.0f)
             );
         }
+        if (auto it = stateTable.find(curState); it != stateTable.end()) {
+            if( !it->second.header.empty() ){
+                ShowDialog_OnDraw(io, it->second);
+            }
+        }
         if(!_isInstalling){
             bool isHighlighted = (highlightIconPos.x != 0 && highlightIconPos.y != 0);
+            highlightIconLerpPos = (highlightIconLerpPos.x == 0 && highlightIconLerpPos.y == 0) ? highlightIconPos : ImLerp(highlightIconLerpPos, highlightIconPos, io.DeltaTime * 5.0f);
             if(isHighlighted){
                 if(nextWidgetId != currentWidgetId){
                     currentWidgetId = nextWidgetId;
@@ -591,20 +597,12 @@ namespace Condemned2 {
                 if (scrapeIcon){
                     scrapeAlpha = ImLerp(scrapeAlpha, 1.0f, io.DeltaTime * 3.0f);
                 }
-            }
-            if (auto it = stateTable.find(curState); it != stateTable.end()) {
-                if( !it->second.header.empty() ){
-                    ShowDialog_OnDraw(io, it->second);
-                }
-            }
-            if (highlightIcon) {
-                highlightIconLerpPos = (highlightIconLerpPos.x == 0 && highlightIconLerpPos.y == 0) ? highlightIconPos : ImLerp(highlightIconLerpPos, highlightIconPos, io.DeltaTime * 5.0f);
-                if(isHighlighted){
+                if (highlightIcon) {
                     draw_list->AddImage(reinterpret_cast<ImTextureID>(highlightIcon.get()), 
                     ImVec2(highlightIconLerpPos.x - 96.0f, highlightIconLerpPos.y - 48.0f), 
                     ImVec2(highlightIconLerpPos.x, highlightIconLerpPos.y + 48.0f), 
                     ImVec2(0.0f, 0.0f),ImVec2(1.0f, 1.0f));
-                } 
+                }
             }
             ImGui::SetCursorPosX(io.DisplaySize.x * 0.5f);
             ImGui::SetCursorPosY(io.DisplaySize.y - 190.0f);
@@ -759,7 +757,7 @@ namespace Condemned2 {
     //Select Iso controls
     void GameLauncherDialog::ShowDialog_SelectIso(ImGuiIO& io) {
         //Asset Path
-        UIWidgets::AddText("Installation Path", _loadedFonts["selawk"], ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, ImGui::GetContentRegionAvail().y * 0.5f));
+        UIWidgets::AddText("Installation Path", _loadedFonts["selawk"], ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, ImGui::GetContentRegionAvail().y * 0.5f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f);
         ImGui::SameLine();
         if (UIWidgets::AddButton(_paths.game_data_root.string().c_str(), _loadedFonts["selawkb"], ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y * 0.5f), 21.0f)) {
             auto selectedDir = RexGlueSuite::FileDialog::OpenDirectoryPicker(_workPath.string().c_str());
@@ -772,7 +770,7 @@ namespace Condemned2 {
             }
         }
         //ISO Path
-        UIWidgets::AddText("Game ISO Path", _loadedFonts["selawk"], ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, ImGui::GetContentRegionAvail().y));
+        UIWidgets::AddText("Game ISO Path", _loadedFonts["selawk"], ImVec2(ImGui::GetContentRegionAvail().x * 0.25f, ImGui::GetContentRegionAvail().y), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 32.0f);
         ImGui::SameLine();
         if (UIWidgets::AddButton(_workPath.string().c_str(), _loadedFonts["selawkb"], ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), 21.0f)) {
             auto selectedFile = RexGlueSuite::FileDialog::OpenFilePicker();

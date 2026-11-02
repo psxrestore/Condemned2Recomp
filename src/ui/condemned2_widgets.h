@@ -54,7 +54,7 @@ namespace Condemned2 {
         }
       }
 
-      static bool AddButton(const char* label, ImFont* font, ImVec2 size = ImVec2(256, 64), float fontSize = 0.0f, const char *id = nullptr, bool* rightClicked = nullptr){
+      static bool AddButton(const char* label, ImFont* font, ImVec2 size = ImVec2(256, 64), float fontSize = 32.0f, const char *id = nullptr, bool* rightClicked = nullptr){
         std::string widget_id = std::string("##") + (id ? id : label);
         ImGui::PushID(widget_id.c_str());
         ImGui::InvisibleButton(widget_id.c_str(), size);     
