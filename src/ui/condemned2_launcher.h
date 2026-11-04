@@ -188,7 +188,6 @@ namespace Condemned2 {
         std::string currentWidgetId;
         std::string nextWidgetId;
         std::string currentLabel;
-        int currentGameState;
 
         //Paths
         //Animated logo

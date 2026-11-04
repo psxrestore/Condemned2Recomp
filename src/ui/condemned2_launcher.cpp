@@ -60,8 +60,7 @@ REXCVAR_DEFINE_STRING(condemned2_quickbms_script_filename, "condemned2.bms", "Co
 REXCVAR_DEFINE_STRING(condemned2_quickbms_script_url, "https://github.com/psxrestore/QuickBMS-For-Recomps/releases/download/0.12.0/condemned2.bms", "Condemned 2", "QuickBMS Script Download").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 REXCVAR_DEFINE_STRING(condemned2_quickbms_script_hash, "0acc7be36f094fe06285b05a04e8f6af78538e975309feb2b0393efc1df33a64", "Condemned 2", "QuickBMS Script Hash").lifecycle(rex::cvar::Lifecycle::kInitOnly);
 
-REX_EXTERN(__imp__sub_822F3330);
-REX_EXTERN(__imp__sub_8241BBD0);
+//REX_EXTERN(__imp__sub_8241BBD0);
 REX_EXTERN(__imp__sub_8241BB18);
 REX_EXTERN(__imp__sub_822F2BA0);
 
@@ -793,23 +792,21 @@ namespace Condemned2 {
 
         //In-game only menu items
         bool isInGameMode = false;
-        uint8_t* gameState = _hook->GetMemory()->TranslateVirtual<uint8_t*>(0x82936328);
-        uint8_t* loadState = _hook->GetMemory()->TranslateVirtual<uint8_t*>(0x829363e4);
-        if(gameState && loadState){
-            if(gameItemUpdate <= ImGui::GetTime()){
-                int newGameState = _hook->get_int(gameState);
-                if(newGameState != currentGameState || _hook->get_int(loadState) != 0 ){
-                    currentGameState = newGameState;
-                    gameItemUpdate = ImGui::GetTime() + 1.0f;
-                    ResetAnimation(true);
-                }else{
-                    isInGameMode = ( currentGameState == 2 );
+        if(_hook){
+            rex::memory::Memory *hookMemory = _hook->GetMemory(); 
+            if(hookMemory){
+                uint8_t* gameState = hookMemory->TranslateVirtual<uint8_t*>(0x82936328);
+                uint8_t* loadState = hookMemory->TranslateVirtual<uint8_t*>(0x829363e4);
+                if(gameState && loadState){
+                    int newGameState = _hook->get_int(gameState);
+                    int newLoadState = _hook->get_int(loadState);
+                    isInGameMode = ( newGameState == 2 && newLoadState == 0 );
                 }
             }
         }
         if(isInGameMode){
             /*if (UIWidgets::AddMenuButton("Restart Mission", "Restart your mission.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
-                std::function<void(PPCContext&, uint8_t*)> restartLevel = [this](PPCContext& ctx, uint8_t* base)
+                std::function<void(PPCContext&, uint8_t*)> restartLevel = [](PPCContext& ctx, uint8_t* base)
                 {
                     ctx.r3.u64 = 0x8293e468; 
                     ctx.r4.u64 = menuAddress; 
@@ -818,12 +815,14 @@ namespace Condemned2 {
                 _hook->SendCommandCall(0x8241A468,restartLevel);
             }*/
             if (UIWidgets::AddMenuButton("Quick load", "Restart from last checkpoint or quick save.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
-                std::function<void(PPCContext&, uint8_t*)> restartCheckpoint = [this](PPCContext& ctx, uint8_t* base)
-                {
-                    ctx.r3.u64 = 0x8293e468;
-                    __imp__sub_8241BB18(ctx,base);
-                };
-                _hook->SendCommandCall(0x8241BB18,restartCheckpoint);
+                if(_hook){
+                    std::function<void(PPCContext&, uint8_t*)> restartCheckpoint = [](PPCContext& ctx, uint8_t* base)
+                    {
+                        ctx.r3.u64 = 0x8293e468;
+                        __imp__sub_8241BB18(ctx,base);
+                    };
+                    _hook->SendCommandCall(0x8241BB18,restartCheckpoint);
+                }
             }
             if (UIWidgets::AddMenuButton("Quick save", "Save your progress in the current mission.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
                 if(_hook){
@@ -837,12 +836,15 @@ namespace Condemned2 {
         }
         if(isInGameMode){
             if (UIWidgets::AddMenuButton("Quit to Main Menu", "Quit your current session and return to the main menu.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
-                std::function<void(PPCContext&, uint8_t*)> restartQuitToMenu = [this](PPCContext& ctx, uint8_t* base)
-                {
-                    ctx.r3.u64 = 0x82934780;
-                    __imp__sub_822F2BA0(ctx,base);
-                };
-                _hook->SendCommandCall(0x822F2BA0,restartQuitToMenu);
+                if(_hook){
+                    std::function<void(PPCContext&, uint8_t*)> restartQuitToMenu = [](PPCContext& ctx, uint8_t* base)
+                    {
+                        ctx.r3.u64 = 0x82934780;
+                        __imp__sub_822F2BA0(ctx,base);
+                    };
+                    _hook->SendCommandCall(0x822F2BA0,restartQuitToMenu);
+                }
+                ResetAnimation(true);
             }
         }
         if (UIWidgets::AddMenuButton("Quit to Desktop", "Quit Condemned2Recomp and resume to desktop.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
@@ -1046,9 +1048,9 @@ namespace Condemned2 {
     //Used for the updater!!!
     uint64_t GameLauncherDialog::current_pid()
     {
-    #if defined(_WIN32)
+    #if REX_PLATFORM_WIN32
         return static_cast<uint64_t>(GetCurrentProcessId());
-    #elif defined(__linux__)
+    #elif REX_PLATFORM_LINUX
         return static_cast<uint64_t>(getpid());
     #else
         return 0;
@@ -1132,10 +1134,5 @@ namespace Condemned2 {
             self->key_name = self->MouseButtonName(event->button.button);
         }
         return true;
-    }
-    
-    REX_HOOK_RAW(sub_822F3330){
-        REXLOG_INFO("[condemned2_launcher][sub_822F3330] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u64, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32);
-        __imp__sub_822F3330(ctx,base);
     }
 };
