@@ -44,7 +44,7 @@ namespace Condemned2 {
                 {"texture_cache_memory_limit_hard","8192"},
                 {"texture_cache_memory_limit_soft_lifetime","3600"},
                 //Other
-                {"audio_maxqframes","16"}, // Increasing might reduce performance
+                {"audio_maxqframes","64"}, // Setting below 64 might result in audio being cut out!
                 {"readback_memexport", "false"}, 
                 {"clear_memory_page_state", "true"}, //"false"}, //Required for RexCRT at times! Otherwise, disable for CPU performance!
                 {"execute_unclipped_draw_vs_on_cpu", "true"}, // Fixes black screen issue for RTV render target path in Condemned 2.
