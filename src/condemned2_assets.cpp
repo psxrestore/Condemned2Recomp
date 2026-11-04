@@ -36,8 +36,8 @@ REX_EXTERN(__imp__Game_ProcessBundle);
 REX_EXTERN(__imp__Game_InitWorldModel);
 REX_EXTERN(__imp__Game_InitWorldObject);
 
-REXCVAR_DEFINE_BOOL(condemned2_assets_debug, true, "Condemned 2/Debug", "Toggle logging for asset manager.");
-REXCVAR_DEFINE_BOOL(condemned2_loaded_assets_debug, true, "Condemned 2/Debug", "Toggle logging for loaded resources");
+REXCVAR_DEFINE_BOOL(condemned2_assets_debug, false, "Condemned 2/Debug", "Toggle logging for asset manager.");
+REXCVAR_DEFINE_BOOL(condemned2_loaded_assets_debug, false, "Condemned 2/Debug", "Toggle logging for loaded resources");
 
 //Rex Cvars
 namespace Condemned2 {
