@@ -1,3 +1,4 @@
 [submodule "thirdparty/rexglue-sdk"]
-	path = thirdparty/rexglue-sdk
-	url = https://github.com/rexglue/rexglue-sdk.git
+    path = thirdparty/rexglue-sdk
+    url = https://github.com/psxrestore/rexglue-sdk.git
+    branch = condemned2
