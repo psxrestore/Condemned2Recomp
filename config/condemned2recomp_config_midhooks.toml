@@ -85,18 +85,3 @@ address = 0x82122EE8
 name = "Set_Video_Height"
 registers = ["r8"]
 after_instruction = false
-
-####################
-#Unlocked Framerate#
-####################
-[[midasm_hook]]
-address = 0x82385850
-name = "Unlock_Framerate"
-registers = ["f30"]
-after_instruction = true
-
-[[midasm_hook]]
-address = 0x823861BC
-name = "Unlock_Framerate"
-registers = ["f0"]
-after_instruction = true
