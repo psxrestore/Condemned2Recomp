@@ -89,7 +89,7 @@ namespace rex::input::condemned2input{
 
          bool IsUsingTuningControls() { return isTuning; }
          bool IsUsingMeleeWeapon() { return hasMeleeWeapon; }
-         bool IsInMenu() { return isInMenu; }
+         bool IsInMenu();
          bool IsUsingPCControls() { return isUsingPCControls; }
          
          bool IsDebugging() { return isDebugging; }

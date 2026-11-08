@@ -548,6 +548,22 @@ namespace rex::input::condemned2input {
     return kInputManager;
   }
 
+  bool Condemned2InputDriver::IsInMenu() { 
+    if(!isInMenu){
+      rex::memory::Memory *hookMemory = _hooks->GetMemory(); 
+      if(hookMemory){
+        uint8_t* gameState = hookMemory->TranslateVirtual<uint8_t*>(0x82936328);
+        if(gameState){
+          int newGameState = _hooks->get_int(gameState);
+          if(newGameState != 2){
+            return true;
+          }
+        }
+      }
+    }
+    return isInMenu; 
+  }
+
   //Resolves rex string cvars to mouse look enum!
   void Condemned2InputDriver::SetMouseLookTypeFromString( std::string mouseMode ){
     // Mouse look
