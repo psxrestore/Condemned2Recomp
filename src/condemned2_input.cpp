@@ -62,7 +62,7 @@ REXCVAR_DEFINE_STRING(condemned2_input_objectives, "Tab", "Condemned 2/Input/Key
 
 // Mouse Settings
 REXCVAR_DEFINE_STRING(condemned2_input_mouse, "Mixed","Condemned 2/Input/Mouse", "Mouse Look Mode").allowed({"Native", "Mixed", "Disable"});
-REXCVAR_DEFINE_DOUBLE(condemned2_input_mouse_sensitivity, 0.075, "Condemned 2/Input/Mouse", "Mouse Sensitivity").range(0.01, 1.0);
+REXCVAR_DEFINE_DOUBLE(condemned2_input_mouse_sensitivity, 1.0, "Condemned 2/Input/Mouse", "Mouse Sensitivity").range(0.0, 2.0);
 
 REXCVAR_DEFINE_BOOL(condemned2_input_debug, false, "Condemned 2/Debug", "Toggle logging for all input.");
 REXCVAR_DEFINE_BOOL(condemned2_input_frame_debug, false, "Condemned 2/Debug", "Toggle logging for input per frame.");
@@ -80,11 +80,16 @@ REX_EXTERN(__imp__TvAntennaAdjust); // Function that processes Radio/TV antenna 
 REX_EXTERN(__imp__IsMeleeWeapon); // Checks if player's current weapon is a melee weapon
 
 //Imported functions used for PC controls!
-REX_IMPORT(Input_KeyDown, PressBind, uint32_t(uint32_t, uint32_t));
+REX_IMPORT(Input_KeyDown, PressBind, uint32_t(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t));
 REX_IMPORT(Input_KeyHold, HoldBind, uint32_t(uint32_t, uint32_t));
 
 namespace rex::input::condemned2input {
-  namespace {constexpr rex::input::DeviceId kDevice = static_cast<rex::input::DeviceId>(0x4E4F5000); constexpr uint32_t kInputManager = 0x4005ae70; constexpr uint32_t kInputManagerCRT = 0x200afcc0;}
+  namespace {
+    constexpr rex::input::DeviceId kDevice = static_cast<rex::input::DeviceId>(0x4E4F5000); 
+    constexpr uint32_t kInputManager = 0x4005ae70;
+    constexpr uint32_t kInputManagerCRT = 0x200afcc0;     
+    constexpr float PI = 3.14159265358979323846f;
+  }
   Condemned2InputDriver* g_condemned2_input_driver = nullptr;
 
   Condemned2InputDriver::Condemned2InputDriver(rex::ui::Window* window, size_t window_z_order) : InputDriver(window, window_z_order) {
@@ -340,10 +345,10 @@ namespace rex::input::condemned2input {
     //Mouse movement
     float dx = 0.0f, dy = 0.0f;
     SDL_GetRelativeMouseState(&dx, &dy);
-    double sensitivity = REXCVAR_GET(condemned2_input_mouse_sensitivity);
+    mouseSensitivity = REXCVAR_GET(condemned2_input_mouse_sensitivity) * (PI / 180.0f);
     // Mouse look
-    last_dx = dx * sensitivity;
-    last_dy = dy * sensitivity;
+    last_dx = dx * mouseSensitivity;
+    last_dy = dy * mouseSensitivity;
     // Additive mouse delta
     last_add_dx += last_dx * 0.01f;
     last_add_dy += -last_dy * 0.01f;
@@ -444,18 +449,10 @@ namespace rex::input::condemned2input {
     }
 
     // Quick-swap (Custom controls)
-    if(Pressed(activeBinds["condemned2_input_tool_uv"])){
-      NativeKeyPress({0x71,0x90,0x96,0xa0});
-    }
-    if(Pressed(activeBinds["condemned2_input_tool_camera"])){
-      NativeKeyPress({0x71,0x98,0x9e,0xa0});
-    }
-    if(Pressed(activeBinds["condemned2_input_tool_spectrometer"])){
-      NativeKeyPress({0x74,0x71,0x97,0xa1});
-    }
-    if(Pressed(activeBinds["condemned2_input_tool_gps"])){
-      NativeKeyPress({0x74,0x71,0x99,0x9f});
-    }
+    Held({activeBinds["condemned2_input_tool_uv"]}, {0x71,0x90,0x96,0xa0} );
+    Held({activeBinds["condemned2_input_tool_camera"]}, {0x71,0x98,0x9e,0xa0} );
+    Held({activeBinds["condemned2_input_tool_spectrometer"]}, {0x74,0x71,0x97,0xa1} );
+    Held({activeBinds["condemned2_input_tool_gps"]}, {0x74,0x71,0x99,0x9f} );
     g_condemned2_input_driver->SetMouseWheelY(0); //Reset wheel after a frame.
   }
   
@@ -534,7 +531,7 @@ namespace rex::input::condemned2input {
   void Condemned2InputDriver::NativeKeyPress(std::vector<int32_t> keycodes, bool release ){
     uint32_t keyManager = GetInputManager();
     for (int32_t k : keycodes) {
-      PressBind(keyManager, k);
+      PressBind(keyManager, k, 0x0, 0x0, 0x0, 0x0);
       if(!release){
         HoldBind(keyManager, k);
       }
@@ -576,7 +573,7 @@ namespace rex::input::condemned2input {
     }
   }
   
-  double GetAxisOverrideValue(uint32_t btn){
+  double GetAxisOverrideValue(uint32_t btn, float currentValue){
     //Left Stick Handling / Movement Velocity
     std::pair<double,double> moveVel = g_condemned2_input_driver->MoveVel();
     if (btn == 0x2 && moveVel.second != 0){
@@ -609,10 +606,14 @@ namespace rex::input::condemned2input {
     if( g_condemned2_input_driver->IsUsingTuningControls() ){
       std::pair<double,double> accumMouse = g_condemned2_input_driver->AccumMouse();
       if (btn == 0x7B) {
-        return accumMouse.first;
+        if(currentValue == 0.0f){
+          return accumMouse.first;
+        }
       }
       if (btn == 0x7C) {
-        return accumMouse.second;
+        if(currentValue == 0.0f){
+          return accumMouse.second;
+        }
       }
     }
     if ( btn == 0x7B || btn == 0x7C ){
@@ -678,8 +679,8 @@ namespace rex::input::condemned2input {
   //Input Event Functions
   REX_HOOK_RAW(Input_GetAxis) {
     uint32_t newID = ctx.r4.u32;
-    double newValue = GetAxisOverrideValue(newID);
     __imp__Input_GetAxis(ctx, base);
+    double newValue = GetAxisOverrideValue(newID, ctx.f1.f64);
     if( newValue != 0 ){
       ctx.f1.f64 = newValue;
     }
@@ -689,7 +690,7 @@ namespace rex::input::condemned2input {
   }
   REX_HOOK_RAW(Input_KeyDown){
     if(g_condemned2_input_driver->IsDebugging()){
-      REXLOG_INFO("[condemned2_input][Input_KeyDown] {:#x} {:#x}", ctx.r3.u32, ctx.r4.u64);
+      REXLOG_INFO("[condemned2_input][Input_KeyDown] {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}", ctx.r3.u32, ctx.r4.u64, ctx.r5.u64, ctx.r6.u64, ctx.r7.u64, ctx.r8.u64);
     }
     __imp__Input_KeyDown(ctx, base);
   }
@@ -758,5 +759,15 @@ bool Mouse_SensitivityCurve(PPCRegister& param_1, PPCRegister& param_2) {
       return false;
 
     param_1.f64 = param_2.f64;
+    return true;     
+}
+
+// Instead of using the game's native MouseSensitity, we're midhooking our own sensitivity.
+bool Mouse_SensitivityCurveNative(PPCRegister& param_1) {
+    if (rex::input::condemned2input::g_condemned2_input_driver->GetMouseLookType() == rex::input::condemned2input::MouseLookType::DISABLED
+    || !rex::input::condemned2input::g_condemned2_input_driver->IsUsingPCControls())
+      return false;
+  
+    param_1.f64 = rex::input::condemned2input::g_condemned2_input_driver->GetMouseSensitivity();
     return true;     
 }

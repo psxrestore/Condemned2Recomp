@@ -78,9 +78,12 @@ namespace rex::input::condemned2input{
          std::pair<double, double> AccumMouse() { return {last_add_dx, last_add_dy}; }
          std::pair<double, double> MoveVel() { return {move_dx, move_dy}; }
          MouseBind MouseClick() { return mouse_clicks; }
-         double GetAxisOverrideValue(uint32_t btn);
+         double GetAxisOverrideValue(uint32_t btn, float currentValue);
          double GetButtonOverrideValue(uint32_t btn);
          void SetMouseWheelY(float newY, bool add = false) { if(add) { wheelY += newY; } else { wheelY = newY; } }
+
+         double GetMouseSensitivity() { return mouseSensitivity; }
+         void SetMouseSensitivity(double newSensitivity) { mouseSensitivity = newSensitivity; }
 
          void SetTuningControls( bool enabled ) { isTuning = enabled; }
          void SetMeleeControls( bool enabled ) { hasMeleeWeapon = enabled; }
@@ -118,6 +121,7 @@ namespace rex::input::condemned2input{
          bool isUsingPCControls = true;
          bool isDebugging = false;
          bool isDebuggingFrames = false;
+         double mouseSensitivity;
          double last_dx;
          double last_dy;
          double last_add_dx;
