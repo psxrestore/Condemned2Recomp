@@ -52,8 +52,8 @@
     "2.39:1"
 });*/
 REXCVAR_DEFINE_DOUBLE(condemned2_fov, 1.0, "Condemned 2/Graphics", "Camera Fov").range(0.75f, 1.5f);
-REXCVAR_DEFINE_DOUBLE(condemned2_film_grain, 0.2, "Condemned 2/Graphics", "Film Grain").range(0.0f, 1.0f);
-REXCVAR_DEFINE_DOUBLE(condemned2_saturation, 0.3, "Condemned 2/Graphics", "Film Grain").range(0.0f, 1.0f);
+//REXCVAR_DEFINE_DOUBLE(condemned2_film_grain, 0.2, "Condemned 2/Graphics", "Film Grain").range(0.0f, 1.0f);
+//REXCVAR_DEFINE_DOUBLE(condemned2_saturation, 0.3, "Condemned 2/Graphics", "Saturation").range(0.0f, 1.0f);
 REXCVAR_DEFINE_BOOL(condemned2_screen_effects, true, "Condemned 2/Graphics", "Screen Effects");
 REXCVAR_DEFINE_BOOL(condemned2_snow_effects, true, "Condemned 2/Graphics", "Snow Effects");
 REXCVAR_DEFINE_STRING(condemned2_shadow_quality, "High","Condemned 2/Graphics", "Shadow Quality").allowed({"Native", "Low", "Medium", "High"});

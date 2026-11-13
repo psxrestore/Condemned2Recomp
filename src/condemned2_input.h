@@ -32,6 +32,7 @@ namespace rex::input::condemned2input{
       SDL_Scancode keys[kMaxKeys] = {};
       uint32_t mouseMask = 0;
       bool prev = false;
+      std::chrono::steady_clock::time_point pressTime{};
    };
 
    struct MouseBind {

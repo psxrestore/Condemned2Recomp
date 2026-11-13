@@ -63,6 +63,8 @@ REXCVAR_DEFINE_STRING(condemned2_input_objectives, "Tab", "Condemned 2/Input/Key
 // Mouse Settings
 REXCVAR_DEFINE_STRING(condemned2_input_mouse, "Mixed","Condemned 2/Input/Mouse", "Mouse Look Mode").allowed({"Native", "Mixed", "Disable"});
 REXCVAR_DEFINE_DOUBLE(condemned2_input_mouse_sensitivity, 1.0, "Condemned 2/Input/Mouse", "Mouse Sensitivity").range(0.0, 2.0);
+REXCVAR_DEFINE_DOUBLE(condemned2_input_ads_sensitivity, 0.5, "Condemned 2/Input/Mouse", "ADS Sensitivity").range(0.0, 2.0);
+REXCVAR_DEFINE_DOUBLE(condemned2_input_tuning_sensitivity, 0.1, "Condemned 2/Input/Mouse", "Tuning Sensitivity").range(0.0, 1.0);
 
 REXCVAR_DEFINE_BOOL(condemned2_input_debug, false, "Condemned 2/Debug", "Toggle logging for all input.");
 REXCVAR_DEFINE_BOOL(condemned2_input_frame_debug, false, "Condemned 2/Debug", "Toggle logging for input per frame.");
@@ -346,12 +348,13 @@ namespace rex::input::condemned2input {
     float dx = 0.0f, dy = 0.0f;
     SDL_GetRelativeMouseState(&dx, &dy);
     mouseSensitivity = REXCVAR_GET(condemned2_input_mouse_sensitivity) * (PI / 180.0f);
-    // Mouse look
-    last_dx = dx * mouseSensitivity;
-    last_dy = dy * mouseSensitivity;
+    // Last mouse delta
+    last_dx = dx;
+    last_dy = dy;
     // Additive mouse delta
-    last_add_dx += last_dx * 0.01f;
-    last_add_dy += -last_dy * 0.01f;
+    float tuningSensitivity = REXCVAR_GET(condemned2_input_tuning_sensitivity) * (PI / 180.0f);
+    last_add_dx += last_dx * tuningSensitivity;
+    last_add_dy += -last_dy * tuningSensitivity;
     last_add_dx = std::clamp(last_add_dx, -1.0, 1.0);
     last_add_dy = std::clamp(last_add_dy, -1.0, 1.0);
 
@@ -362,8 +365,10 @@ namespace rex::input::condemned2input {
     Held({activeBinds["menu_nav_left"], activeBinds["condemned2_input_move_left"]}, {0x84, 0x8d} );
 
     //Confirm, Use Commands
+    auto& useBind = activeBinds["condemned2_input_use"];
+    auto& enterMenuBind = activeBinds["menu_enter"];
     if(IsInMenu()){
-      if(Pressed(activeBinds["condemned2_input_use"]) || Pressed(activeBinds["menu_enter"])){ //buttons |= X_INPUT_GAMEPAD_B;
+      if(Pressed(useBind) || Pressed(enterMenuBind)){ //buttons |= X_INPUT_GAMEPAD_B;
         NativeKeyPress({
           //Submit menu confirm
           0xa6,
@@ -379,7 +384,7 @@ namespace rex::input::condemned2input {
       }
     }else{
       //Menu interaction
-      if(Pressed(activeBinds["condemned2_input_use"]) || Pressed(activeBinds["menu_enter"])){ //buttons |= X_INPUT_GAMEPAD_B;
+      if(Pressed(useBind) || Pressed(enterMenuBind)){ //buttons |= X_INPUT_GAMEPAD_B;
         NativeKeyPress({
           //Submit menu confirm
           0xa6,
@@ -395,7 +400,7 @@ namespace rex::input::condemned2input {
         });
       }
       //Player use action
-      Held({activeBinds["condemned2_input_use"], activeBinds["menu_enter"]}, {0x57} );
+      Held({useBind}, {0x57} );
     }
     
     //Menu back
@@ -411,6 +416,7 @@ namespace rex::input::condemned2input {
     if(Pressed(activeBinds["pause_menu"])){ //buttons |= X_INPUT_GAMEPAD_START
       NativeKeyPress({0xd});
     }
+    Held({activeBinds["condemned2_input_objectives"]}, {0x4f, 0x4e} );
     if(Pressed(activeBinds["condemned2_input_flashlight"])){ //buttons |= X_INPUT_GAMEPAD_B;
       NativeKeyPress({0x72,0x8c});
     }
@@ -432,15 +438,30 @@ namespace rex::input::condemned2input {
     if(IsDown(activeBinds["condemned2_input_hook_attacks"])){
       NativeKeyPress({0x42, 0xa8});
     }
-    if(!IsDown(activeBinds["condemned2_input_slowmo"]) && activeBinds["condemned2_input_slowmo"].prev){
+
+    //Slowmo
+    auto& slowmoBind = activeBinds["condemned2_input_slowmo"];
+    if(!IsDown(slowmoBind) && slowmoBind.prev){
       _hooks->SendCommandCmd({_hooks->AllocateHeapForString("msg Player (slowmo off)"), 0, 0, 0});
     }
-    if(Pressed(activeBinds["condemned2_input_slowmo"]) ){
+    if(Pressed(slowmoBind) ){
       _hooks->SendCommandCmd({_hooks->AllocateHeapForString("msg Player (slowmo on default)"), 0, 0, 0});
     } 
 
-    Held({activeBinds["condemned2_input_objectives"]}, {0x4f, 0x4e} );
-    Held({activeBinds["condemned2_input_forensics"]}, {0x74, 0x71} );
+    //Forensic switch
+    //Depending on how long this button is held, it could either open the forensics tools menu or quick-use your current forensic tool.
+    auto& forensicBind = activeBinds["condemned2_input_forensics"];
+    bool forensicsPressed = forensicBind.prev;
+    Held({forensicBind}, {0x74} );
+    bool isForensicsOpen = IsDown(forensicBind);
+    auto forensicsElapsed = std::chrono::steady_clock::now() - forensicBind.pressTime;
+    if(isForensicsOpen && forensicsElapsed > std::chrono::seconds(2) ){
+      Held({forensicBind}, {0x71} );
+    }else if(!isForensicsOpen && forensicsPressed){
+      NativeKeyPress({0x70});
+    }
+
+    //Forensic tools
     if(Pressed(activeBinds["condemned2_input_tool_take_picture"])){
       NativeKeyPress({0xb9});
     }
@@ -508,6 +529,9 @@ namespace rex::input::condemned2input {
     bool held = !isDialogOpen && IsDown(b);
     bool edge = held && !b.prev;
     b.prev = held;
+    if (edge) {
+      b.pressTime = std::chrono::steady_clock::now();
+    }
     return edge;
   }
 
@@ -603,17 +627,13 @@ namespace rex::input::condemned2input {
 
     // Radio/TV Antenna Tuning
     // This uses a soft additive mouse input so users can feel slight weight in adjusting antennas.
-    if( g_condemned2_input_driver->IsUsingTuningControls() ){
+    if( g_condemned2_input_driver->IsUsingTuningControls() && currentValue == 0.0f ){
       std::pair<double,double> accumMouse = g_condemned2_input_driver->AccumMouse();
       if (btn == 0x7B) {
-        if(currentValue == 0.0f){
-          return accumMouse.first;
-        }
+        return accumMouse.first;
       }
       if (btn == 0x7C) {
-        if(currentValue == 0.0f){
-          return accumMouse.second;
-        }
+        return accumMouse.second;
       }
     }
     if ( btn == 0x7B || btn == 0x7C ){
@@ -623,25 +643,26 @@ namespace rex::input::condemned2input {
     // Mouse Look
     // Overriding right stick input with raw mouse input
     std::pair<double,double> rawMouse = g_condemned2_input_driver->RawMouse();
+    double mouseSensitivity = g_condemned2_input_driver->GetMouseSensitivity();
     if (g_condemned2_input_driver->GetMouseLookType() == MouseLookType::NATIVE){ // Restored dev/unused mouse look function in Condemned 2 ( which introduces its own smoothing and sensitivity )
       if ( btn == 0x17 || btn == 0x16 ){
         return 0;
       }
       if (btn == 0xC ) {
-        return rawMouse.first;
+        return rawMouse.first * mouseSensitivity;
       }
       if (btn == 0xB ) {
-        return rawMouse.second;
+        return rawMouse.second * mouseSensitivity;
       }
     }else if (g_condemned2_input_driver->GetMouseLookType() == MouseLookType::MIXED){ // Overrides gamepad input to use raw mouse input, retaining more subtle behaviors from the gamepad input.
       if ( btn == 0xC || btn == 0xB ){
         return 0;
       }
       if (btn == 0x17 ) {
-        return rawMouse.first;
+        return rawMouse.first * mouseSensitivity;
       }
       if (btn == 0x16 ) {
-        return rawMouse.second;
+        return rawMouse.second * mouseSensitivity;
       }
     }
     return 0;
@@ -763,11 +784,10 @@ bool Mouse_SensitivityCurve(PPCRegister& param_1, PPCRegister& param_2) {
 }
 
 // Instead of using the game's native MouseSensitity, we're midhooking our own sensitivity.
-bool Mouse_SensitivityCurveNative(PPCRegister& param_1) {
+void Mouse_SensitivityCurveNative(PPCRegister& param_1) {
     if (rex::input::condemned2input::g_condemned2_input_driver->GetMouseLookType() == rex::input::condemned2input::MouseLookType::DISABLED
     || !rex::input::condemned2input::g_condemned2_input_driver->IsUsingPCControls())
-      return false;
-  
+      return;
+
     param_1.f64 = rex::input::condemned2input::g_condemned2_input_driver->GetMouseSensitivity();
-    return true;     
 }
