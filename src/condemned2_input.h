@@ -21,6 +21,59 @@
 
 namespace rex::input::condemned2input{
 
+   enum ActionID : uint32_t {
+      LSTICK_Y = 0x2,
+      LSTICK_X = 0x5,
+      MOUSE_X = 0xC,
+      MOUSE_Y = 0xB, 
+      START_MENU = 0xd,
+      RIGHT_TRIGGER = 0x11,
+      LEFT_TRIGGER = 0x1c,
+      TRIGGER_HOLD = 0xbc,
+      PLAYER_SPRINT = 0x10,
+      RSTICK_X = 0x17,
+      RSTICK_Y = 0x16,
+      PLAYER_STATUS = 0x3d,
+      PLAYER_TASER = 0x3e,
+      PLAYER_THROW = 0x3f,
+      USE_WEAPON = 0x47,
+      OBJECTIVES_BEGIN = 0x4f, 
+      OBJECTIVES_END = 0x4e,
+      PLAYER_USE = 0x57, // Player use
+      PLAYER_KICK = 0x5a,
+      CANCEL_INVESTIGATION = 0x65, // Cancel investigation
+      PLAYER_DROP = 0x66,
+      PLAYER_FLASHLIGHT = 0x72,
+      RIGHT_TRIGGER_PRESS = 0x7a,
+      LEFT_TRIGGER_PRESS = 0x79,
+      PLAYER_HOOK_BEGIN = 0x42,
+      PLAYER_HOOK_END = 0xa8,
+      TAKE_PICTURE = 0xb9,
+      FORENSICS_HOLD = 0x74, 
+      FORENSICS_OPEN = 0x71, 
+      FORENSICS_QUICK = 0x70,
+      TUNING_X = 0x7B,
+      TUNING_Y = 0x7C,
+      ZOOM = 0x8b,
+      MENU_NAV_UP = 0x82,
+      MENU_NAV_DOWN = 0x83,
+      MENU_NAV_RIGHT = 0x85,
+      MENU_NAV_LEFT = 0x84,
+      MENU_NAV_CAT_RIGHT = 0x8e,
+      MENU_NAV_CAT_LEFT = 0x8d,
+      //Submit menu confirm
+      SUBMIT = 0xa6,
+      SUBMIT_B = 0x5b,
+      //Menu confirm
+      CONFIRM = 0x87,
+      GO_BACK = 0x88,
+      CONFIRM_B = 0xb5,
+      INGAME_CONFIRM = 0xa7, //In-game menu confirm
+      FIGHTCLUB = 0xb7, // Used for dialogs in fight club
+      TUTORIAL = 0xba, // Close tutorial dialogs
+      DECISION = 0x5d // Choose investigation choice
+   };
+
    enum class MouseLookType {
       NATIVE,
       MIXED,
@@ -31,7 +84,7 @@ namespace rex::input::condemned2input{
       static constexpr int kMaxKeys = 4;
       SDL_Scancode keys[kMaxKeys] = {};
       uint32_t mouseMask = 0;
-      bool prev = false;
+      bool isHeld = false;
       std::chrono::steady_clock::time_point pressTime{};
    };
 
@@ -60,31 +113,41 @@ namespace rex::input::condemned2input{
          void OnWindowAvailable(rex::ui::Window* window) override;
          void PCControls();
          uint32_t GetInputManager();
+         void SetHook(Condemned2::Condemned2Hook *hooks){_hooks = hooks;}
 
+         //Dialog management
          bool IsAnyDialogOpen();
          std::unordered_map<std::string, ImGuiWindow*> GetActiveWindows() { return activeWindows; }
 
+         //Binds
+         void HoldBind( std::initializer_list<std::reference_wrapper<Bind>> binds, std::vector<int32_t> keycodes, bool down = false, bool pressed = false);
+         void ActivateBind(std::vector<int32_t> keycodes, bool release = false);
+         void TimedBind( Bind& b, int32_t holdKeycode, int32_t onKeycode, int32_t offKeycode, float duration = 0.5f);
+         std::unordered_map<std::string, Bind>& GetActiveBinds() { return activeBinds; }
          Bind ParseBind(const std::string& s);
-         bool IsDown(const Bind &b);
-         bool Pressed(Bind& b);
-         void Held( std::initializer_list<std::reference_wrapper<Bind>> binds, std::vector<int32_t> keycodes, bool down = false, bool pressed = false);
-         void NativeKeyPress(std::vector<int32_t> keycodes, bool release = false);
-         std::unordered_map<std::string, Bind> GetActiveBinds() { return activeBinds; }
+         bool IsBindDown(const Bind &b);
+         bool IsBindDown(const std::string& s);
+         bool IsBindPressed(Bind& b);
+         bool IsBindPressed(const std::string& s);
 
+         //Movement & Mouse
          static bool WatchEventCallback(void* userdata, SDL_Event* event);
          void SetMouseLookType( MouseLookType mouseMode ) { mouseLookType = mouseMode; }
          void SetMouseLookTypeFromString( std::string mouseMode );
          MouseLookType GetMouseLookType() { return mouseLookType; }
-         std::pair<double, double> RawMouse() { return {last_dx, last_dy}; }
-         std::pair<double, double> AccumMouse() { return {last_add_dx, last_add_dy}; }
-         std::pair<double, double> MoveVel() { return {move_dx, move_dy}; }
          MouseBind MouseClick() { return mouse_clicks; }
-         double GetAxisOverrideValue(uint32_t btn, float currentValue);
-         double GetButtonOverrideValue(uint32_t btn);
-         void SetMouseWheelY(float newY, bool add = false) { if(add) { wheelY += newY; } else { wheelY = newY; } }
-
+         std::pair<double, double> MoveVel() { return {move_dx, move_dy}; }
+         std::pair<double, double> RawMouse() { return {last_dx, last_dy}; }
+         std::pair<double, double> AdditiveMouse() { return {last_add_dx, last_add_dy}; }
+         std::pair<double, double> AccumMouse() { return {last_accum_dx, last_accum_dy}; }
+         void ResetAccumMouse(){ last_accum_dx = 0; last_accum_dy = 0; }
          double GetMouseSensitivity() { return mouseSensitivity; }
          void SetMouseSensitivity(double newSensitivity) { mouseSensitivity = newSensitivity; }
+         void SetMouseWheelY(float newY, bool add = false) { if(add) { wheelY += newY; } else { wheelY = newY; } }
+
+         //Native button values
+         double GetAxisOverrideValue(uint32_t btn, float currentValue);
+         double GetButtonOverrideValue(uint32_t btn);
 
          void SetTuningControls( bool enabled ) { isTuning = enabled; }
          void SetMeleeControls( bool enabled ) { hasMeleeWeapon = enabled; }
@@ -95,14 +158,19 @@ namespace rex::input::condemned2input{
          bool IsUsingMeleeWeapon() { return hasMeleeWeapon; }
          bool IsInMenu();
          bool IsUsingPCControls() { return isUsingPCControls; }
-         
+
+         //Debugging
          bool IsDebugging() { return isDebugging; }
          bool IsDebuggingFrames() { return isDebuggingFrames; } 
-
-         void SetHook(Condemned2::Condemned2Hook *hooks){_hooks = hooks;}
       private:
          Condemned2::Condemned2Hook *_hooks;
          uint32_t packet_number_ = 0;
+         bool isDialogOpen = true;
+         bool isInMenu = false;
+         bool isTuning; //Hey, wanna listen to some tunes?
+         bool isUsingPCControls = true;
+         bool isDebugging = false;
+         bool isDebuggingFrames = false;
 
          //Window management
          rex::ui::Window* attached_window_ = nullptr;
@@ -116,15 +184,11 @@ namespace rex::input::condemned2input{
 
          //Raw mouse input
          MouseLookType mouseLookType;
-         bool isDialogOpen = true;
-         bool isInMenu = false;
-         bool isTuning; //Hey, wanna listen to some tunes?
-         bool isUsingPCControls = true;
-         bool isDebugging = false;
-         bool isDebuggingFrames = false;
          double mouseSensitivity;
          double last_dx;
          double last_dy;
+         double last_accum_dx;
+         double last_accum_dy;
          double last_add_dx;
          double last_add_dy;
          float wheelY;

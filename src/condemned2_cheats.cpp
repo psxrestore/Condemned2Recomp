@@ -185,7 +185,7 @@ namespace Condemned2 {
             __imp__Player_HasUpgrade(ctx, base);
             return;
         }
-       ctx.r8.u64 = 1;
+        ctx.r8.u64 = 1;
     }
 
     REX_HOOK_RAW(GunAccuracyMultiplier) {
@@ -207,12 +207,11 @@ namespace Condemned2 {
     REX_HOOK_RAW(DefaultWeapon){
         Condemned2Hook* hook = g_condemned2_cheats->GetHook();
         if (hook != nullptr) {
-            std::string intensity = rex::cvar::GetFlagByName("condemned2_flashlight_intensity");
-            if(intensity == "1.0"){
-                hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (flashlightintensity {} 1)", rex::cvar::GetFlagByName("condemned2_flashlight_intensity") ).c_str()), 0, 0, 0});
+            if( g_condemned2_cheats->HasAllUpgrades() ){
+                hook->SendCommandCmd({hook->AllocateHeapForString("msg Player (GRENADEOVERRIDE Taser_Level03)"), 0, 0, 0});
             }
-            hook->SendCommandCmd({hook->AllocateHeapForString("msg Player (GRENADEOVERRIDE Taser_Level03)"), 0, 0, 0});
             hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (candamage {})", !g_condemned2_cheats->IsGodModeActive()).c_str()), 0, 0, 0});
+            hook->SendCommandCmd({hook->AllocateHeapForString(std::format("msg Player (flashlightintensity {} 1)", rex::cvar::GetFlagByName("condemned2_flashlight_intensity") ).c_str()), 0, 0, 0});
         }
 
         std::string selectedWeapon = g_condemned2_cheats->GetStartingWeapon();

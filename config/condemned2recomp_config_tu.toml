@@ -54,7 +54,7 @@
 0x822D3038 = {name="Input_InHud"}
 0x82425158 = {name="AimingSensitivity"} # Aiming sensitivity setting
 0x8230A428 = {name="ProcessLookInput"}
-0x82306DE8 = {name="Camera_MouseLook"} # Restored native mouse look!
+0x82306DD8 = {name="Camera_MouseLook"} # Restored native mouse look!
 
 #Unlockables and Cheats
 0x823077E0 = {name="Unlockables_Levels"}
