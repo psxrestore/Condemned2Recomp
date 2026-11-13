@@ -604,8 +604,8 @@ namespace Condemned2 {
                 }
             }
             ImGui::SetCursorPosX(io.DisplaySize.x * 0.5f);
-            ImGui::SetCursorPosY(io.DisplaySize.y - 190.0f);
-            UIWidgets::AddText(currentLabel.c_str(), _loadedFonts["selawk"], ImVec2(1, 1), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 48.0f);
+            ImGui::SetCursorPosY(io.DisplaySize.y * 0.868f);
+            UIWidgets::AddText(currentLabel.c_str(), _loadedFonts["selawk"], ImVec2(1, 1), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), io.DisplaySize.y * 0.033);
         }
         ImGui::End();
         ImGui::PopStyleColor();
@@ -658,11 +658,12 @@ namespace Condemned2 {
         ImDrawList* dl = ImGui::GetWindowDrawList();
         //Header
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16, 16));   
-        ImGui::SetCursorPosY(240.0f);
-        ImGui::BeginChild("HeaderSection", ImVec2(640,320), false); 
-        UIWidgets::AddImage("logoBgImg",  ImVec2(0, 0), ImVec2(640, 320), ImVec2(0, 16), reinterpret_cast<ImTextureID>(logoBg.get()));
-        UIWidgets::DrawPath(g_logoPaths, pathUpdate, cachedJittered, ImVec2(-32, -170), 4.0f, 0.1f, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-        UIWidgets::AddText(newStep.header.c_str(), _loadedFonts["selawkb"], ImVec2(640, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 48.0f); //Subtitle
+        ImGui::SetCursorPosY(io.DisplaySize.y * 0.16f);
+        ImVec2 logoSize = ImVec2(io.DisplaySize.x * 0.25, io.DisplaySize.y * 0.22);
+        ImGui::BeginChild("HeaderSection", logoSize, false); 
+        UIWidgets::AddImage("logoBgImg",  ImVec2(0, 0), logoSize, ImVec2(0, 16), reinterpret_cast<ImTextureID>(logoBg.get()));
+        UIWidgets::DrawPath(g_logoPaths, pathUpdate, cachedJittered, ImVec2(-32, -170), io.DisplaySize.y * 0.0027, 0.1f, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec2(io.DisplaySize.x * 0.2, io.DisplaySize.y * 0.138) );
+        UIWidgets::AddText(newStep.header.c_str(), _loadedFonts["selawkb"], ImVec2(logoSize.x, 32), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), io.DisplaySize.y * 0.033); //Subtitle
         ImGui::PopStyleVar();
         ImGui::EndChild();
 
@@ -786,7 +787,7 @@ namespace Condemned2 {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(184, 64));
         ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
         ImGui::BeginChild("PCMenu", ImVec2(io.DisplaySize.x, ImGui::GetContentRegionAvail().y), true);
-        if (UIWidgets::AddMenuButton("Resume", "Resume playing.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+        if (UIWidgets::AddMenuButton("Resume", "Resume playing.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             CloseDialog();
         }
 
@@ -814,7 +815,7 @@ namespace Condemned2 {
                 };
                 _hook->SendCommandCall(0x8241A468,restartLevel);
             }*/
-            if (UIWidgets::AddMenuButton("Quick load", "Restart from last checkpoint or quick save.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+            if (UIWidgets::AddMenuButton("Quick load", "Restart from last checkpoint or quick save.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
                 if(_hook){
                     std::function<void(PPCContext&, uint8_t*)> restartCheckpoint = [](PPCContext& ctx, uint8_t* base)
                     {
@@ -824,18 +825,18 @@ namespace Condemned2 {
                     _hook->SendCommandCall(0x8241BB18,restartCheckpoint);
                 }
             }
-            if (UIWidgets::AddMenuButton("Quick save", "Save your progress in the current mission.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+            if (UIWidgets::AddMenuButton("Quick save", "Save your progress in the current mission.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
                 if(_hook){
                     _hook->SendCommandCmd({_hook->AllocateHeapForString("msg system CHECKPOINTSAVE"), 0, 0, 0});
                 }
             }
         }
-        if (UIWidgets::AddMenuButton("PC Settings", "Configure video and input settings.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+        if (UIWidgets::AddMenuButton("PC Settings", "Configure video and input settings.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::PCSettings;
             ResetAnimation(true);
         }
         if(isInGameMode){
-            if (UIWidgets::AddMenuButton("Quit to Main Menu", "Quit your current session and return to the main menu.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+            if (UIWidgets::AddMenuButton("Quit to Main Menu", "Quit your current session and return to the main menu.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
                 if(_hook){
                     std::function<void(PPCContext&, uint8_t*)> restartQuitToMenu = [](PPCContext& ctx, uint8_t* base)
                     {
@@ -847,7 +848,7 @@ namespace Condemned2 {
                 ResetAnimation(true);
             }
         }
-        if (UIWidgets::AddMenuButton("Quit to Desktop", "Quit Condemned2Recomp and resume to desktop.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+        if (UIWidgets::AddMenuButton("Quit to Desktop", "Quit Condemned2Recomp and resume to desktop.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::Exit;
         }
 
@@ -861,23 +862,23 @@ namespace Condemned2 {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(184, 64));
         ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(0, 0, 0, 0));
         ImGui::BeginChild("PCSettings", ImVec2(io.DisplaySize.x, ImGui::GetContentRegionAvail().y), true);
-        if (UIWidgets::AddMenuButton("Launcher", "Configure launcher settings.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+        if (UIWidgets::AddMenuButton("Launcher", "Configure launcher settings.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::PCLauncherSettings;
         }
         
-        if (UIWidgets::AddMenuButton("Game", "Configure various quality-of-life improvements and cheats.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+        if (UIWidgets::AddMenuButton("Game", "Configure various quality-of-life improvements and cheats.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::PCGameSettings;
         }
 
-        if (UIWidgets::AddMenuButton("Graphics", "Configure graphic settings.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+        if (UIWidgets::AddMenuButton("Graphics", "Configure graphic settings.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::PCGraphics;
         }
 
-        if (UIWidgets::AddMenuButton("Input", "Configure PC controls.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+        if (UIWidgets::AddMenuButton("Input", "Configure PC controls.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::PCInput;
         }
 
-        if (UIWidgets::AddMenuButton("Back", "Go back to the PC menu.", _loadedFonts["selawk"], &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
+        if (UIWidgets::AddMenuButton("Back", "Go back to the PC menu.", _loadedFonts["selawk"], io.DisplaySize.y * 0.044, ImVec2(512, io.DisplaySize.y * 0.05), &highlightIconPos, &jitterTextPos, &nextWidgetId, &currentLabel, &scrapeIcon, &scrapeAlpha)) { 
             pendingState = LauncherState::PCMenu;
             ResetAnimation(true);
         }

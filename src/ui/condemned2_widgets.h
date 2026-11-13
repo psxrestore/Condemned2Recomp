@@ -74,10 +74,9 @@ namespace Condemned2 {
         return clicked;
       }
 
-      static bool AddMenuButton(const char* label, const char* newLabel, ImFont* font, 
+      static bool AddMenuButton(const char* label, const char* newLabel, ImFont* font, float fontSize = 64.0f, ImVec2 size = ImVec2(512, 72),
         ImVec2* iconPos = nullptr, ImVec2* jitterBgPos = nullptr, std::string* widgetId = nullptr, std::string* menuLabel = nullptr, 
-        std::unique_ptr<rex::ui::ImmediateTexture> *bgImg = nullptr, float* bgImgAlpha = nullptr,
-        ImVec2 size = ImVec2(512, 72), float fontSize = 64.0f, const char *id = nullptr){
+        std::unique_ptr<rex::ui::ImmediateTexture> *bgImg = nullptr, float* bgImgAlpha = nullptr, const char *id = nullptr){
         std::string widget_id = std::string("##") + (id ? id : label);
         ImGui::PushID(widget_id.c_str());
         ImGui::InvisibleButton(widget_id.c_str(), size);     
@@ -108,7 +107,7 @@ namespace Condemned2 {
         } 
         ImVec2 textSize = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, label);
         ImVec2 textPos = ImVec2(p0.x, p2.y - (textSize.y * 0.5f) );
-        ImGui::PushFont(font);
+        ImGui::PushFont(font, fontSize);
         if(!isNotWidget && jitterBgPos != nullptr){
           dl->AddText(ImVec2(textPos.x + (-4 + jitterBgPos->x), ( -4 + textPos.y + jitterBgPos->y)), ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, 0.5f)), label);
         }
