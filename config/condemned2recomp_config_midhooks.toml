@@ -34,9 +34,9 @@ jump_address_on_true = 0x8230A52C
 
 # Native Mouse Look sensitivity
 [[midasm_hook]]
-address = 0x82306EE4
+address = 0x82306EF4
 name = "Mouse_SensitivityCurveNative"
-registers = ["f31"]
+registers = ["f1"]
 after_instruction = true
 
 ############################

@@ -788,6 +788,6 @@ void Mouse_SensitivityCurveNative(PPCRegister& param_1) {
     if (rex::input::condemned2input::g_condemned2_input_driver->GetMouseLookType() == rex::input::condemned2input::MouseLookType::DISABLED
     || !rex::input::condemned2input::g_condemned2_input_driver->IsUsingPCControls())
       return;
-
+      
     param_1.f64 = rex::input::condemned2input::g_condemned2_input_driver->GetMouseSensitivity();
 }
